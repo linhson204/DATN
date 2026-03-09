@@ -1,0 +1,64 @@
+# ===========================
+# Java / Maven (BE)
+# ===========================
+BE/target/
+BE/*.class
+BE/*.jar
+BE/*.war
+BE/*.ear
+BE/.mvn/wrapper/maven-wrapper.jar
+BE/.classpath
+BE/.project
+BE/.settings/
+BE/bin/
+
+# ===========================
+# Spring Boot
+# ===========================
+BE/src/main/resources/application-local.properties
+BE/src/main/resources/application-secret.properties
+
+# ===========================
+# Frontend (FE)
+# ===========================
+FE/node_modules/
+FE/.next/
+FE/dist/
+FE/build/
+FE/.env
+FE/.env.local
+FE/.env.development.local
+FE/.env.test.local
+FE/.env.production.local
+FE/.cache/
+FE/.parcel-cache/
+
+# ===========================
+# IDE / Editor
+# ===========================
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ===========================
+# OS
+# ===========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===========================
+# Logs
+# ===========================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
