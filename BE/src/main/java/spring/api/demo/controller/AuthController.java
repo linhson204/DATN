@@ -9,13 +9,18 @@ import org.springframework.web.bind.annotation.*;
 
 import spring.api.demo.config.JwtUtil;
 import spring.api.demo.dto.auth.request.BlacklistTokenRequest;
+import spring.api.demo.dto.auth.request.ForgotPasswordRequest;
 import spring.api.demo.dto.auth.request.LoginRequest;
+import spring.api.demo.dto.auth.request.RegisterRequest;
+import spring.api.demo.dto.auth.request.ResetPasswordRequest;
+import spring.api.demo.dto.auth.request.VerifyOtpRequest;
 import spring.api.demo.dto.auth.response.LoginResponse;
 import spring.api.demo.dto.auth.response.RefreshTokenResponse;
 import spring.api.demo.resource.ErrorResource;
 import spring.api.demo.resource.MessageResource;
 import spring.api.demo.service.BlacklistService;
 import spring.api.demo.service.JwtService;
+import spring.api.demo.service.PasswordResetService;
 import spring.api.demo.service.impl.UserServiceInterface;
 
 @Validated
@@ -33,6 +38,9 @@ public class AuthController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private PasswordResetService passwordResetService;
 
     public AuthController(UserServiceInterface userService) {
         this.userService = userService;
@@ -88,4 +96,50 @@ public class AuthController {
         String newRefreshToken = jwtService.generateRefreshToken(userId, email, role, username);
         return ResponseEntity.ok(new RefreshTokenResponse(newAccessToken, newRefreshToken));
     }
+
+    @PostMapping("forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        Object result = passwordResetService.sendOtp(request);
+        if (result instanceof ErrorResource errorResource) {
+            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("verify-otp")
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        Object result = passwordResetService.verifyOtp(request);
+        if (result instanceof ErrorResource errorResource) {
+            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        Object result = passwordResetService.resetPassword(request);
+        if (result instanceof ErrorResource errorResource) {
+            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("register")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        Object result = userService.register(request);
+        if(result instanceof ErrorResource errorResource) {
+            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("verify-email")
+    public ResponseEntity<?> verifyEmail(@Valid @RequestBody VerifyOtpRequest request) {    
+        Object result = userService.verifyEmail(request);
+        if(result instanceof ErrorResource errorResource) {
+            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
+        }
+        return ResponseEntity.ok(result);
+    }
+
 }

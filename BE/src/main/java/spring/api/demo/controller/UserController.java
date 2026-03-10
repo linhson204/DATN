@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import spring.api.demo.dto.user.request.UserRequest;
@@ -35,4 +36,10 @@ public class UserController {
 
         return ResponseEntity.ok(new SuccessResource<>("Lấy thông tin thành công", userRequest));
     }
+
+    @PostMapping("/users/register")
+    public ResponseEntity<?> register() {
+         return ResponseEntity.ok("Đăng ký thành công");
+     }
+
 }

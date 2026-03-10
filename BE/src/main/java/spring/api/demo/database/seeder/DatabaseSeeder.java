@@ -33,6 +33,19 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Transactional
     @Override
     public void run(String... args) throws Exception {
+        // Role customerRole = roleRepository.findByName("customer")
+        //             .orElseGet(() -> roleRepository.save(Role.builder().name("customer").build()));
+        // User user2 = User.builder()
+        //             .username("Son")
+        //             .fullName("Nguyen Linh Son")
+        //             .email("linhson24032004@gmail.com")
+        //             .passwordHash("123456")
+        //             .phoneNumber("0123456789")
+        //             .address("123 Admin St, City, Country")
+        //             .role(customerRole)
+        //             .status(true)
+        //             .build();
+        // userRepository.save(user2);
         if (isTableEmpty()) {
             Role adminRole = roleRepository.findByName("admin")
                     .orElseGet(() -> roleRepository.save(Role.builder().name("admin").build()));

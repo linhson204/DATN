@@ -7,6 +7,7 @@ public enum ErrorCode {
     // Authentication
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng"),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Bạn không có quyền truy cập"),
+    ACCOUNT_NOT_VERIFIED(HttpStatus.FORBIDDEN, "Tài khoản chưa được xác thực email"),
 
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User không tồn tại"),
@@ -16,6 +17,9 @@ public enum ErrorCode {
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Token đã hết hạn"),
     TOKEN_BLACKLISTED(HttpStatus.UNAUTHORIZED, "Token đã bị vô hiệu hóa"),
     REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "Refresh token không tồn tại"),
+
+    // OTP
+    INVALID_OTP(HttpStatus.UNPROCESSABLE_ENTITY, "Mã OTP không hợp lệ hoặc đã hết hạn"),
 
     // Validation
     VALIDATION_FAILED(HttpStatus.UNPROCESSABLE_ENTITY, "Dữ liệu không hợp lệ"),
