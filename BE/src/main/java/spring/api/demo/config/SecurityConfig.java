@@ -36,8 +36,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v1/auth/login").permitAll()
                         .requestMatchers("/v1/auth/refresh").permitAll()
-                        .requestMatchers("/v1/auth/forgot-password").permitAll()
-                        .requestMatchers("/v1/auth/verify-otp").permitAll()
+                        .requestMatchers("/v1/auth/send-otp").permitAll()
+                        .requestMatchers("/v1/auth/verify-otp-forgot-password").permitAll()
                         .requestMatchers("/v1/auth/reset-password").permitAll()
                         .requestMatchers("/v1/auth/register").permitAll()
                         .requestMatchers("/v1/auth/verify-email").permitAll()

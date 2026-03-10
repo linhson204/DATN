@@ -7,14 +7,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import spring.api.demo.dto.auth.request.ForgotPasswordRequest;
+import spring.api.demo.dto.auth.request.EmailReceiveOptRequest;
 import spring.api.demo.dto.auth.request.ResetPasswordRequest;
 import spring.api.demo.dto.auth.request.VerifyOtpRequest;
-import spring.api.demo.entity.PasswordResetOtp;
-import spring.api.demo.entity.PasswordResetOtp.OtpType;
+import spring.api.demo.entity.OtpValid;
+import spring.api.demo.entity.OtpValid.OtpType;
 import spring.api.demo.entity.User;
 import spring.api.demo.exception.ErrorCode;
-import spring.api.demo.repository.PasswordResetOtpRepository;
+import spring.api.demo.repository.OtpValidRepository;
 import spring.api.demo.repository.UserRepository;
 import spring.api.demo.resource.ErrorResource;
 import spring.api.demo.resource.MessageResource;
@@ -24,19 +24,22 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-public class PasswordResetService {
+public class OtpService {
 
-    private static final Logger logger = LoggerFactory.getLogger(PasswordResetService.class);
+    private static final Logger logger = LoggerFactory.getLogger(OtpService.class);
     private static final SecureRandom RANDOM = new SecureRandom();
 
     @Autowired
-    private PasswordResetOtpRepository otpRepository;
+    private OtpValidRepository otpRepository;
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private EmailService emailService;
+    private EmailForgotPasswordService emailForgotPasswordService;
+
+    @Autowired
+    private EmailValidService emailValidService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -45,28 +48,37 @@ public class PasswordResetService {
     private int otpExpirationMinutes;
 
     @Transactional
-    public Object sendOtp(ForgotPasswordRequest request) {
+    public Object sendOtp(EmailReceiveOptRequest request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
+        User user = userOpt.get();
+        if(!user.getStatus() && request.getType() == String.valueOf(OtpType.FORGOT_PASSWORD)) {
+            return new ErrorResource(ErrorCode.ACCOUNT_NOT_VERIFIED,
+                    Map.of("message", "Tài khoản chưa được kích hoạt"));
+        }
         if (userOpt.isEmpty()) {
             // Trả về thông báo chung để tránh lộ thông tin người dùng
             return new MessageResource("Nếu email tồn tại, mã OTP đã được gửi");
         }
 
         // Vô hiệu hóa tất cả OTP cũ của email này
-        otpRepository.invalidateAllByEmailAndType(request.getEmail(), OtpType.FORGOT_PASSWORD.name());
+        otpRepository.invalidateAllByEmailAndType(request.getEmail(), request.getType());
 
         String otpCode = generateOtp();
-        PasswordResetOtp otp = PasswordResetOtp.builder()
+        OtpValid otp = OtpValid.builder()
                 .email(request.getEmail())
                 .otpCode(otpCode)
                 .expiryDate(LocalDateTime.now().plusMinutes(otpExpirationMinutes))
                 .isUsed(false)
-                .type(OtpType.FORGOT_PASSWORD.name())
+                .type(request.getType())
                 .build();
         otpRepository.save(otp);
 
         try {
-            emailService.sendOtpEmail(request.getEmail(), otpCode);
+            if (OtpType.valueOf(request.getType()) == OtpType.FORGOT_PASSWORD) {
+                emailForgotPasswordService.sendOtpEmail(request.getEmail(), otpCode);
+            } else if (OtpType.valueOf(request.getType()) == OtpType.EMAIL_VERIFICATION) {
+                emailValidService.sendOtpEmail(request.getEmail(), otpCode);
+            }
         } catch (Exception e) {
             logger.error("Lỗi gửi OTP: {}", e.getMessage());
             return new ErrorResource(ErrorCode.INTERNAL_SERVER_ERROR,
@@ -76,33 +88,24 @@ public class PasswordResetService {
         return new MessageResource("Mã OTP đã được gửi đến email của bạn");
     }
 
-    public Object verifyOtp(VerifyOtpRequest request) {
-        Optional<PasswordResetOtp> otpOpt = otpRepository
-                .findTopByEmailAndTypeAndIsUsedFalseOrderByCreatedAtDesc(request.getEmail(), OtpType.FORGOT_PASSWORD.name());
 
-        if (otpOpt.isEmpty()) {
-            return new ErrorResource(ErrorCode.INVALID_OTP,
-                    Map.of("message", "Mã OTP không hợp lệ hoặc đã hết hạn"));
-        }
+    /** Xác minh OTP với type tuỳ chỉnh — trả về OTP nếu hợp lệ */
+    public Optional<OtpValid> verifyOtp(VerifyOtpRequest request, OtpType otpType) {
+        Optional<OtpValid> otpOpt = otpRepository
+                .findTopByEmailAndTypeAndIsUsedFalseOrderByCreatedAtDesc(request.getEmail(), otpType.name());
+        if (otpOpt.isEmpty()) return Optional.empty();
 
-        PasswordResetOtp otp = otpOpt.get();
+        OtpValid otp = otpOpt.get();
+        if (LocalDateTime.now().isAfter(otp.getExpiryDate())) return Optional.empty();
+        if (!otp.getOtpCode().equals(request.getOtpCode())) return Optional.empty();
 
-        if (LocalDateTime.now().isAfter(otp.getExpiryDate())) {
-            return new ErrorResource(ErrorCode.INVALID_OTP,
-                    Map.of("message", "Mã OTP đã hết hạn"));
-        }
-
-        if (!otp.getOtpCode().equals(request.getOtpCode())) {
-            return new ErrorResource(ErrorCode.INVALID_OTP,
-                    Map.of("message", "Mã OTP không đúng"));
-        }
-
-        return new MessageResource("Mã OTP hợp lệ");
+        return Optional.of(otp);
     }
+
 
     @Transactional
     public Object resetPassword(ResetPasswordRequest request) {
-        Optional<PasswordResetOtp> otpOpt = otpRepository
+        Optional<OtpValid> otpOpt = otpRepository
                 .findTopByEmailAndTypeAndIsUsedFalseOrderByCreatedAtDesc(request.getEmail(), OtpType.FORGOT_PASSWORD.name());
 
         if (otpOpt.isEmpty()) {
@@ -110,7 +113,7 @@ public class PasswordResetService {
                     Map.of("message", "Mã OTP không hợp lệ hoặc đã hết hạn"));
         }
 
-        PasswordResetOtp otp = otpOpt.get();
+        OtpValid otp = otpOpt.get();
 
         if (LocalDateTime.now().isAfter(otp.getExpiryDate())) {
             return new ErrorResource(ErrorCode.INVALID_OTP,
@@ -151,13 +154,13 @@ public class PasswordResetService {
         return String.valueOf(code);
     }
 
-    /** Tạo và gửi OTP với type tuỳ chỉnh — dùng chung cho cả quên MK và xác thực email */
+
     @Transactional
-    public void createAndSendOtp(String email, OtpType otpType) {
+    public void SendOtpValidEmail(String email, OtpType otpType) {
         otpRepository.invalidateAllByEmailAndType(email, otpType.name());
 
         String otpCode = generateOtp();
-        PasswordResetOtp otp = PasswordResetOtp.builder()
+        OtpValid otp = OtpValid.builder()
                 .email(email)
                 .otpCode(otpCode)
                 .expiryDate(LocalDateTime.now().plusMinutes(otpExpirationMinutes))
@@ -165,20 +168,7 @@ public class PasswordResetService {
                 .type(otpType.name())
                 .build();
         otpRepository.save(otp);
-        emailService.sendOtpEmail(email, otpCode);
-    }
-
-    /** Xác minh OTP với type tuỳ chỉnh — trả về OTP nếu hợp lệ */
-    public Optional<PasswordResetOtp> validateOtp(String email, String otpCode, OtpType otpType) {
-        Optional<PasswordResetOtp> otpOpt = otpRepository
-                .findTopByEmailAndTypeAndIsUsedFalseOrderByCreatedAtDesc(email, otpType.name());
-        if (otpOpt.isEmpty()) return Optional.empty();
-
-        PasswordResetOtp otp = otpOpt.get();
-        if (LocalDateTime.now().isAfter(otp.getExpiryDate())) return Optional.empty();
-        if (!otp.getOtpCode().equals(otpCode)) return Optional.empty();
-
-        return Optional.of(otp);
+        emailValidService.sendOtpEmail(email, otpCode);
     }
     
 }

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import spring.api.demo.config.JwtUtil;
 import spring.api.demo.dto.auth.request.BlacklistTokenRequest;
-import spring.api.demo.dto.auth.request.ForgotPasswordRequest;
+import spring.api.demo.dto.auth.request.EmailReceiveOptRequest;
 import spring.api.demo.dto.auth.request.LoginRequest;
 import spring.api.demo.dto.auth.request.RegisterRequest;
 import spring.api.demo.dto.auth.request.ResetPasswordRequest;
@@ -18,10 +18,13 @@ import spring.api.demo.dto.auth.response.LoginResponse;
 import spring.api.demo.dto.auth.response.RefreshTokenResponse;
 import spring.api.demo.resource.ErrorResource;
 import spring.api.demo.resource.MessageResource;
+import java.util.Optional;
 import spring.api.demo.service.BlacklistService;
 import spring.api.demo.service.JwtService;
-import spring.api.demo.service.PasswordResetService;
+import spring.api.demo.service.OtpService;
 import spring.api.demo.service.impl.UserServiceInterface;
+import spring.api.demo.entity.OtpValid;
+import spring.api.demo.entity.OtpValid.OtpType;
 
 @Validated
 @RestController
@@ -40,7 +43,7 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private PasswordResetService passwordResetService;
+    private OtpService otpService;
 
     public AuthController(UserServiceInterface userService) {
         this.userService = userService;
@@ -97,27 +100,29 @@ public class AuthController {
         return ResponseEntity.ok(new RefreshTokenResponse(newAccessToken, newRefreshToken));
     }
 
-    @PostMapping("forgot-password")
-    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        Object result = passwordResetService.sendOtp(request);
+    @PostMapping("send-otp")
+    public ResponseEntity<?> sendOtp(@Valid @RequestBody EmailReceiveOptRequest request) {
+        Object result = otpService.sendOtp(request);
         if (result instanceof ErrorResource errorResource) {
             return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
         }
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("verify-otp")
+    @PostMapping("verify-otp-forgot-password")
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
-        Object result = passwordResetService.verifyOtp(request);
-        if (result instanceof ErrorResource errorResource) {
-            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
+        Optional<OtpValid> result = otpService.verifyOtp(request, OtpType.FORGOT_PASSWORD);
+
+        if(result.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResource("Mã OTP không hợp lệ hoặc đã hết hạn"));
         }
-        return ResponseEntity.ok(result);
+
+        return ResponseEntity.ok(new MessageResource("Mã OTP hợp lệ"));
     }
 
     @PostMapping("reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        Object result = passwordResetService.resetPassword(request);
+        Object result = otpService.resetPassword(request);
         if (result instanceof ErrorResource errorResource) {
             return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
         }

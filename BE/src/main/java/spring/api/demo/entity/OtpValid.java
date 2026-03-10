@@ -13,8 +13,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "password_reset_otp")
-public class PasswordResetOtp {
+@Table(name = "otp_valid")
+public class OtpValid {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

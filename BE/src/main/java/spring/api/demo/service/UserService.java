@@ -12,12 +12,12 @@ import spring.api.demo.dto.auth.request.RegisterRequest;
 import spring.api.demo.dto.auth.request.VerifyOtpRequest;
 import spring.api.demo.dto.auth.response.LoginResponse;
 import spring.api.demo.dto.user.request.UserRequest;
-import spring.api.demo.entity.PasswordResetOtp;
-import spring.api.demo.entity.PasswordResetOtp.OtpType;
+import spring.api.demo.entity.OtpValid;
+import spring.api.demo.entity.OtpValid.OtpType;
 import spring.api.demo.entity.Role;
 import spring.api.demo.entity.User;
 import spring.api.demo.exception.ErrorCode;
-import spring.api.demo.repository.PasswordResetOtpRepository;
+import spring.api.demo.repository.OtpValidRepository;
 import spring.api.demo.repository.RoleRepository;
 import spring.api.demo.repository.UserRepository;
 import spring.api.demo.resource.ErrorResource;
@@ -46,10 +46,10 @@ public class UserService implements UserServiceInterface {
     private RoleRepository roleRepository;
 
     @Autowired
-    private PasswordResetService passwordResetService;
+    private OtpService otpService;
 
     @Autowired
-    private PasswordResetOtpRepository otpRepository;
+    private OtpValidRepository otpRepository;
 
     @Override
     public Object authenticate(LoginRequest request) {
@@ -110,7 +110,7 @@ public class UserService implements UserServiceInterface {
         userRepository.save(user);
 
         try {
-            passwordResetService.createAndSendOtp(request.getEmail(), OtpType.EMAIL_VERIFICATION);
+            otpService.SendOtpValidEmail(request.getEmail(), OtpType.EMAIL_VERIFICATION);
         } catch (Exception e) {
             logger.error("Lỗi gửi OTP xác thực email: {}", e.getMessage());
             return new ErrorResource(ErrorCode.INTERNAL_SERVER_ERROR,
@@ -123,8 +123,7 @@ public class UserService implements UserServiceInterface {
     @Override
     @Transactional
     public Object verifyEmail(VerifyOtpRequest request) {
-        Optional<PasswordResetOtp> otpOpt = passwordResetService.validateOtp(
-                request.getEmail(), request.getOtpCode(), OtpType.EMAIL_VERIFICATION);
+        Optional<OtpValid> otpOpt = otpService.verifyOtp(request, OtpType.EMAIL_VERIFICATION);
 
         if (otpOpt.isEmpty()) {
             return new ErrorResource(ErrorCode.INVALID_OTP,
@@ -138,7 +137,7 @@ public class UserService implements UserServiceInterface {
         userRepository.save(user);
 
         // Đánh dấu OTP đã sử dụng
-        PasswordResetOtp otp = otpOpt.get();
+        OtpValid otp = otpOpt.get();
         otp.setIsUsed(true);
         otpRepository.save(otp);
 
