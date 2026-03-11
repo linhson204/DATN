@@ -37,9 +37,4 @@ public class UserController {
         return ResponseEntity.ok(new SuccessResource<>("Lấy thông tin thành công", userRequest));
     }
 
-    @PostMapping("/users/register")
-    public ResponseEntity<?> register() {
-         return ResponseEntity.ok("Đăng ký thành công");
-     }
-
 }

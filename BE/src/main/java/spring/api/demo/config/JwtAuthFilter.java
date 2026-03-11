@@ -43,7 +43,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || path.startsWith("/v1/auth/verify-otp-forgot-password")
                 || path.startsWith("/v1/auth/reset-password")
                 || path.startsWith("/v1/auth/register")
-                || path.startsWith("/v1/auth/verify-email");
+                || path.startsWith("/v1/auth/verify-email")
+                || path.startsWith("/oauth2/")
+                || path.startsWith("/login/oauth2/");
     }
 
     @Override

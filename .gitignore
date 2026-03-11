@@ -32,6 +32,8 @@ FE/.env.test.local
 FE/.env.production.local
 FE/.cache/
 FE/.parcel-cache/
+FE/package-lock.json
+FE/yarn.lock
 
 # ===========================
 # IDE / Editor

@@ -1,0 +1,12 @@
+{
+  "name": "auth-test-fe",
+  "version": "1.0.0",
+  "description": "Simple FE to test authentication",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "preview": "vite preview --port 5173"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

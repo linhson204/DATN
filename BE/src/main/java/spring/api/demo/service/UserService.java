@@ -27,6 +27,7 @@ import spring.api.demo.service.impl.UserServiceInterface;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService implements UserServiceInterface {
@@ -143,5 +144,54 @@ public class UserService implements UserServiceInterface {
 
         logger.info("Xác thực email thành công: {}", request.getEmail());
         return new MessageResource("Xác thực email thành công! Bạn có thể đăng nhập.");
+    }
+
+    /** Gọi từ OAuth2AuthenticationSuccessHandler sau khi Spring xác thực Google thành công */
+    @Transactional
+    public LoginResponse  loginOrRegisterOAuth2(String email, String name) {
+        return buildLoginResponse(email, name);
+    }
+
+    private LoginResponse buildLoginResponse(String email, String name) {
+        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            Role customerRole = roleRepository.findByName("customer")
+                    .orElseThrow(() -> new RuntimeException("Role customer không tồn tại"));
+
+            // Tạo username duy nhất từ email prefix
+            String baseUsername = email.split("@")[0];
+            String username = baseUsername;
+            int suffix = 1;
+            while (userRepository.existsByUsername(username)) {
+                username = baseUsername + suffix++;
+            }
+
+            User newUser = User.builder()
+                    .username(username)
+                    .email(email)
+                    .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .fullName(name != null ? name : username)
+                    .role(customerRole)
+                    .status(true) // Google đã xác thực email
+                    .build();
+
+            logger.info("Tạo tài khoản SSO mới cho email: {}", email);
+            return userRepository.save(newUser);
+        });
+
+        UserRequest userRequest = UserRequest.builder()
+                .id(String.valueOf(user.getId()))
+                .email(user.getEmail())
+                .name(user.getFullName())
+                .role(String.valueOf(user.getRole().getName()))
+                .build();
+
+        String token = jwtService.generateToken(
+                String.valueOf(user.getId()), user.getEmail(),
+                String.valueOf(user.getRole().getName()), user.getFullName());
+        String refreshToken = jwtService.generateRefreshToken(
+                String.valueOf(user.getId()), user.getEmail(),
+                String.valueOf(user.getRole().getName()), user.getFullName());
+
+        return new LoginResponse(token, refreshToken, userRequest);
     }
 }
