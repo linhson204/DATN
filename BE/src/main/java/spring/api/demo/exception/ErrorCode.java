@@ -12,6 +12,10 @@ public enum ErrorCode {
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User không tồn tại"),
 
+    // Product
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Product không tồn tại"),
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "Category không tồn tại"),
+
     // Token
     TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Token không hợp lệ"),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Token đã hết hạn"),

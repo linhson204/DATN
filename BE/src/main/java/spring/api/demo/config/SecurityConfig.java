@@ -41,6 +41,8 @@ public class SecurityConfig {
                         .requestMatchers("/v1/auth/register").permitAll()
                         .requestMatchers("/v1/auth/verify-email").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers("/v1/products", "/v1/products/**").permitAll()
+                        .requestMatchers("/v1/product-categories", "/v1/product-categories/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
