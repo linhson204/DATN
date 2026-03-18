@@ -13,11 +13,12 @@ import spring.api.demo.dto.auth.request.VerifyOtpRequest;
 import spring.api.demo.entity.OtpValid;
 import spring.api.demo.entity.OtpValid.OtpType;
 import spring.api.demo.entity.User;
+import spring.api.demo.exception.AppException;
 import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.repository.OtpValidRepository;
 import spring.api.demo.repository.UserRepository;
-import spring.api.demo.resource.ErrorResource;
 import spring.api.demo.resource.MessageResource;
+
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -48,16 +49,18 @@ public class OtpService {
     private int otpExpirationMinutes;
 
     @Transactional
-    public Object sendOtp(EmailReceiveOptRequest request) {
+    public MessageResource sendOtp(EmailReceiveOptRequest request) {
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
-        User user = userOpt.get();
-        if(!user.getStatus() && request.getType() == String.valueOf(OtpType.FORGOT_PASSWORD)) {
-            return new ErrorResource(ErrorCode.ACCOUNT_NOT_VERIFIED,
-                    Map.of("message", "Tài khoản chưa được kích hoạt"));
-        }
+
         if (userOpt.isEmpty()) {
             // Trả về thông báo chung để tránh lộ thông tin người dùng
             return new MessageResource("Nếu email tồn tại, mã OTP đã được gửi");
+        }
+
+        User user = userOpt.get();
+        if (!user.getStatus() && String.valueOf(OtpType.FORGOT_PASSWORD).equals(request.getType())) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED,
+                    Map.of("message", "Tài khoản chưa được kích hoạt"));
         }
 
         // Vô hiệu hóa tất cả OTP cũ của email này
@@ -81,7 +84,7 @@ public class OtpService {
             }
         } catch (Exception e) {
             logger.error("Lỗi gửi OTP: {}", e.getMessage());
-            return new ErrorResource(ErrorCode.INTERNAL_SERVER_ERROR,
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR,
                     Map.of("message", "Gửi email thất bại, vui lòng thử lại"));
         }
 
@@ -104,37 +107,32 @@ public class OtpService {
 
 
     @Transactional
-    public Object resetPassword(ResetPasswordRequest request) {
+    public MessageResource resetPassword(ResetPasswordRequest request) {
         Optional<OtpValid> otpOpt = otpRepository
                 .findTopByEmailAndTypeAndIsUsedFalseOrderByCreatedAtDesc(request.getEmail(), OtpType.FORGOT_PASSWORD.name());
 
         if (otpOpt.isEmpty()) {
-            return new ErrorResource(ErrorCode.INVALID_OTP,
+            throw new AppException(ErrorCode.INVALID_OTP,
                     Map.of("message", "Mã OTP không hợp lệ hoặc đã hết hạn"));
         }
 
         OtpValid otp = otpOpt.get();
 
         if (LocalDateTime.now().isAfter(otp.getExpiryDate())) {
-            return new ErrorResource(ErrorCode.INVALID_OTP,
+            throw new AppException(ErrorCode.INVALID_OTP,
                     Map.of("message", "Mã OTP đã hết hạn"));
         }
 
         if (!otp.getOtpCode().equals(request.getOtpCode())) {
-            return new ErrorResource(ErrorCode.INVALID_OTP,
+            throw new AppException(ErrorCode.INVALID_OTP,
                     Map.of("message", "Mã OTP không đúng"));
         }
 
-        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
-        if (userOpt.isEmpty()) {
-            return new ErrorResource(ErrorCode.USER_NOT_FOUND,
-                    Map.of("message", "Người dùng không tồn tại"));
-        }
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        User user = userOpt.get();
-
-        if(passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
-            return new ErrorResource(ErrorCode.VALIDATION_FAILED,
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPasswordHash())) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED,
                     Map.of("message", "Mật khẩu mới không được trùng với mật khẩu cũ"));
         }
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));

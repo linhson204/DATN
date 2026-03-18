@@ -14,15 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 import spring.api.demo.dto.common.PageResponse;
 import spring.api.demo.dto.product.request.ProductCreateAndUpdateRequest;
 import spring.api.demo.dto.product.response.ProductResponse;
-import spring.api.demo.exception.ErrorCode;
-import spring.api.demo.resource.ErrorResource;
 import spring.api.demo.resource.MessageResource;
 import spring.api.demo.resource.SuccessResource;
 import spring.api.demo.service.ProductService;
 
 import java.math.BigDecimal;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -36,17 +32,13 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createProduct(@Valid @RequestBody ProductCreateAndUpdateRequest request) {
-        try {
-            ProductResponse response = productService.create(request);
-            return ResponseEntity.ok(new SuccessResource<>("Tao san pham thanh cong", response));
-        } catch (NoSuchElementException ex) {
-            return buildNoSuchElementResponse(ex, Map.of("categoryCode", request.getCategoryCode()));
-        }
+    public ResponseEntity<SuccessResource<ProductResponse>> createProduct(@Valid @RequestBody ProductCreateAndUpdateRequest request) {
+        ProductResponse response = productService.create(request);
+        return ResponseEntity.ok(new SuccessResource<>("Tạo sản phẩm thành công", response));
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllProducts(
+    public ResponseEntity<SuccessResource<PageResponse<ProductResponse>>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -57,58 +49,26 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal maxPrice
     ) {
         PageResponse<ProductResponse> response = productService.getAll(
-                page,
-                size,
-                sortBy,
-                sortDir,
-                name,
-                categoryCode,
-                minPrice,
-                maxPrice
+                page, size, sortBy, sortDir, name, categoryCode, minPrice, maxPrice
         );
-        return ResponseEntity.ok(new SuccessResource<>("Lay danh sach san pham thanh cong", response));
+        return ResponseEntity.ok(new SuccessResource<>("Lấy danh sách sản phẩm thành công", response));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getProductById(@PathVariable UUID id) {
-        try {
-            ProductResponse response = productService.getById(id);
-            return ResponseEntity.ok(new SuccessResource<>("Lay chi tiet san pham thanh cong", response));
-        } catch (NoSuchElementException ex) {
-            return ResponseEntity.status(ErrorCode.PRODUCT_NOT_FOUND.getHttpStatus())
-                    .body(new ErrorResource(ErrorCode.PRODUCT_NOT_FOUND, Map.of("productId", id.toString())));
-        }
+    public ResponseEntity<SuccessResource<ProductResponse>> getProductById(@PathVariable UUID id) {
+        ProductResponse response = productService.getById(id);
+        return ResponseEntity.ok(new SuccessResource<>("Lấy chi tiết sản phẩm thành công", response));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProduct(@PathVariable UUID id, @Valid @RequestBody ProductCreateAndUpdateRequest request) {
-        try {
-            ProductResponse response = productService.update(id, request);
-            return ResponseEntity.ok(new SuccessResource<>("Cap nhat san pham thanh cong", response));
-        } catch (NoSuchElementException ex) {
-            if ("CATEGORY_NOT_FOUND".equals(ex.getMessage())) {
-                return buildNoSuchElementResponse(ex, Map.of("categoryCode", request.getCategoryCode()));
-            }
-            return buildNoSuchElementResponse(ex, Map.of("productId", id.toString()));
-        }
+    public ResponseEntity<SuccessResource<ProductResponse>> updateProduct(@PathVariable UUID id, @Valid @RequestBody ProductCreateAndUpdateRequest request) {
+        ProductResponse response = productService.update(id, request);
+        return ResponseEntity.ok(new SuccessResource<>("Cập nhật sản phẩm thành công", response));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable UUID id) {
-        try {
-            productService.delete(id);
-            return ResponseEntity.ok(new MessageResource("Xoa san pham thanh cong"));
-        } catch (NoSuchElementException ex) {
-            return buildNoSuchElementResponse(ex, Map.of("productId", id.toString()));
-        }
-    }
-
-    private ResponseEntity<ErrorResource> buildNoSuchElementResponse(NoSuchElementException ex, Map<String, String> details) {
-        if ("CATEGORY_NOT_FOUND".equals(ex.getMessage())) {
-            return ResponseEntity.status(ErrorCode.CATEGORY_NOT_FOUND.getHttpStatus())
-                    .body(new ErrorResource(ErrorCode.CATEGORY_NOT_FOUND, details));
-        }
-        return ResponseEntity.status(ErrorCode.PRODUCT_NOT_FOUND.getHttpStatus())
-                .body(new ErrorResource(ErrorCode.PRODUCT_NOT_FOUND, details));
+    public ResponseEntity<MessageResource> deleteProduct(@PathVariable UUID id) {
+        productService.delete(id);
+        return ResponseEntity.ok(new MessageResource("Xóa sản phẩm thành công"));
     }
 }

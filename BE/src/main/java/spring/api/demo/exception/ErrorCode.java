@@ -6,15 +6,31 @@ public enum ErrorCode {
 
     // Authentication
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng"),
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Bạn không có quyền truy cập"),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện hành động này"),
     ACCOUNT_NOT_VERIFIED(HttpStatus.FORBIDDEN, "Tài khoản chưa được xác thực email"),
 
     // User
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User không tồn tại"),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "Người dùng không tồn tại"),
+    EMAIL_ALREADY_EXISTS(HttpStatus.UNPROCESSABLE_ENTITY, "Email đã được sử dụng"),
+    ROLE_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "Role không tồn tại trong hệ thống"),
 
     // Product
-    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Product không tồn tại"),
-    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "Category không tồn tại"),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "Sản phẩm không tồn tại"),
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "Danh mục không tồn tại"),
+    PRODUCT_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "Biến thể sản phẩm không tồn tại"),
+
+    // Cart
+    CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Sản phẩm trong giỏ hàng không tồn tại"),
+    CART_EMPTY(HttpStatus.UNPROCESSABLE_ENTITY, "Giỏ hàng đang trống"),
+    CART_NO_SELECTED_ITEMS(HttpStatus.UNPROCESSABLE_ENTITY, "Vui lòng chọn ít nhất 1 sản phẩm để mua"),
+    INSUFFICIENT_STOCK(HttpStatus.UNPROCESSABLE_ENTITY, "Số lượng sản phẩm trong kho không đủ"),
+    INVALID_QUANTITY(HttpStatus.UNPROCESSABLE_ENTITY, "Số lượng không hợp lệ"),
+
+    // Order
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Đơn hàng không tồn tại"),
+    INVALID_ORDER_STATUS(HttpStatus.UNPROCESSABLE_ENTITY, "Trạng thái đơn hàng không hợp lệ"),
+    INVALID_ORDER_AMOUNT(HttpStatus.UNPROCESSABLE_ENTITY, "Phí vận chuyển và tổng tiền không hợp lệ"),
 
     // Token
     TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Token không hợp lệ"),

@@ -4,11 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import spring.api.demo.dto.user.request.UserRequest;
 import spring.api.demo.entity.User;
+import spring.api.demo.exception.AppException;
 import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.repository.UserRepository;
 import spring.api.demo.resource.SuccessResource;
@@ -17,15 +17,14 @@ import spring.api.demo.resource.SuccessResource;
 @RequestMapping("v1")
 public class UserController {
 
-
     @Autowired
     private UserRepository userRepository;
 
     @GetMapping("/users/me")
-    public ResponseEntity<?> getMe() {
+    public ResponseEntity<SuccessResource<UserRequest>> getMe() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage()));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         UserRequest userRequest = UserRequest.builder()
                 .id(String.valueOf(user.getId()))
@@ -34,7 +33,7 @@ public class UserController {
                 .role(String.valueOf(user.getRole().getName()))
                 .build();
 
-        return ResponseEntity.ok(new SuccessResource<>("Lấy thông tin thành công", userRequest));
+        return ResponseEntity.ok(new SuccessResource<>("Lấy thông tin người dùng thành công", userRequest));
     }
 
 }

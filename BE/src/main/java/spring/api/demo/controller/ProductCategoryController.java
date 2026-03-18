@@ -19,7 +19,7 @@ public class ProductCategoryController {
 
     @GetMapping
     public ResponseEntity<?> getCategories() {
-        return ResponseEntity.ok(new SuccessResource<>("Lay danh sach category thanh cong", productCategoryService.getAll()));
+        return ResponseEntity.ok(new SuccessResource<>("Lấy danh sách danh mục thành công", productCategoryService.getAll()));
     }
     
 }

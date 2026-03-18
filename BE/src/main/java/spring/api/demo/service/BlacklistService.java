@@ -7,8 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import spring.api.demo.dto.auth.request.BlacklistTokenRequest;
 import spring.api.demo.entity.BlacklistedToken;
+import spring.api.demo.exception.AppException;
+import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.repository.BlacklistedTokenRepository;
 import spring.api.demo.resource.MessageResource;
+
 import java.util.UUID;
 
 @Service
@@ -22,12 +25,12 @@ public class BlacklistService {
     @Autowired
     private JwtService jwtService;
 
-    public Object create(BlacklistTokenRequest request) {
-        try {
-            if (blacklistedTokenRepository.existsByToken(request.getToken())) {
-                return new MessageResource("Token đã bị blacklist");
-            }
+    public MessageResource create(BlacklistTokenRequest request) {
+        if (blacklistedTokenRepository.existsByToken(request.getToken())) {
+            return new MessageResource("Token đã bị blacklist trước đó");
+        }
 
+        try {
             Claims claims = jwtService.getAllClaims(request.getToken());
             String userId = claims.getSubject();
             java.util.Date expiryDate = claims.getExpiration();
@@ -41,9 +44,10 @@ public class BlacklistService {
             blacklistedTokenRepository.save(blacklistedToken);
 
             logger.info("Token đã được thêm vào blacklist");
-            return new MessageResource("Token đã được thêm vào blacklist");
+            return new MessageResource("Đăng xuất thành công");
         } catch (Exception e) {
-            return new MessageResource("Thêm token vào blacklist thất bại: " + e.getMessage());
+            logger.error("Lỗi thêm token vào blacklist: {}", e.getMessage());
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 }

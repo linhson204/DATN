@@ -2,7 +2,6 @@ package spring.api.demo.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -15,16 +14,17 @@ import spring.api.demo.dto.auth.request.RegisterRequest;
 import spring.api.demo.dto.auth.request.ResetPasswordRequest;
 import spring.api.demo.dto.auth.request.VerifyOtpRequest;
 import spring.api.demo.dto.auth.response.LoginResponse;
-import spring.api.demo.dto.auth.response.RefreshTokenResponse;
-import spring.api.demo.resource.ErrorResource;
+import spring.api.demo.exception.AppException;
+import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.resource.MessageResource;
-import java.util.Optional;
+import spring.api.demo.entity.OtpValid;
+import spring.api.demo.entity.OtpValid.OtpType;
 import spring.api.demo.service.BlacklistService;
 import spring.api.demo.service.JwtService;
 import spring.api.demo.service.OtpService;
 import spring.api.demo.service.impl.UserServiceInterface;
-import spring.api.demo.entity.OtpValid;
-import spring.api.demo.entity.OtpValid.OtpType;
+import spring.api.demo.dto.auth.response.RefreshTokenResponse;
+import java.util.Optional;
 
 @Validated
 @RestController
@@ -50,44 +50,33 @@ public class AuthController {
     }
 
     @PostMapping("login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        Object result = userService.authenticate(request);
-        if (result instanceof LoginResponse loginResponse) {
-            return ResponseEntity.ok(loginResponse);
-        }
-        if (result instanceof ErrorResource errorResource) {
-            return ResponseEntity.unprocessableEntity().body(errorResource);
-        }
-        return ResponseEntity.status(500).body("Network Error");
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse loginResponse = userService.authenticate(request);
+        return ResponseEntity.ok(loginResponse);
     }
 
     @GetMapping("logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String bearerToken) {
-        try {
-            String token = bearerToken.substring(7);
-            BlacklistTokenRequest blacklistTokenRequest = new BlacklistTokenRequest();
-            blacklistTokenRequest.setToken(token);
-            MessageResource result = (MessageResource) blacklistService.create(blacklistTokenRequest);
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new MessageResource("Đăng xuất thất bại: " + e.getMessage()));
-        }
+    public ResponseEntity<MessageResource> logout(@RequestHeader("Authorization") String bearerToken) {
+        String token = bearerToken.substring(7);
+        BlacklistTokenRequest blacklistTokenRequest = new BlacklistTokenRequest();
+        blacklistTokenRequest.setToken(token);
+        MessageResource result = blacklistService.create(blacklistTokenRequest);
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("refresh")
     public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String bearerToken) {
         if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new MessageResource("Authorization header không hợp lệ"));
+            throw new AppException(ErrorCode.TOKEN_INVALID);
         }
 
         String refreshToken = bearerToken.substring(7);
         if (!jwtService.isTokenFormatValid(refreshToken) || !jwtService.isSignatureValid(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResource("Refresh token sai định dạng hoặc chữ ký"));
+            throw new AppException(ErrorCode.TOKEN_INVALID);
         }
 
         if (!jwtService.isRefreshToken(refreshToken)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResource("Refresh token không hợp lệ"));
+            throw new AppException(ErrorCode.TOKEN_INVALID);
         }
 
         String userId = jwtUtil.getUserIdFromJwt(refreshToken);
@@ -101,49 +90,37 @@ public class AuthController {
     }
 
     @PostMapping("send-otp")
-    public ResponseEntity<?> sendOtp(@Valid @RequestBody EmailReceiveOptRequest request) {
-        Object result = otpService.sendOtp(request);
-        if (result instanceof ErrorResource errorResource) {
-            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
-        }
+    public ResponseEntity<MessageResource> sendOtp(@Valid @RequestBody EmailReceiveOptRequest request) {
+        MessageResource result = otpService.sendOtp(request);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("verify-otp-forgot-password")
-    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+    public ResponseEntity<MessageResource> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         Optional<OtpValid> result = otpService.verifyOtp(request, OtpType.FORGOT_PASSWORD);
 
-        if(result.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResource("Mã OTP không hợp lệ hoặc đã hết hạn"));
+        if (result.isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_OTP);
         }
 
         return ResponseEntity.ok(new MessageResource("Mã OTP hợp lệ"));
     }
 
     @PostMapping("reset-password")
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        Object result = otpService.resetPassword(request);
-        if (result instanceof ErrorResource errorResource) {
-            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
-        }
+    public ResponseEntity<MessageResource> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        MessageResource result = otpService.resetPassword(request);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
-        Object result = userService.register(request);
-        if(result instanceof ErrorResource errorResource) {
-            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
-        }
+    public ResponseEntity<MessageResource> register(@Valid @RequestBody RegisterRequest request) {
+        MessageResource result = userService.register(request);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("verify-email")
-    public ResponseEntity<?> verifyEmail(@Valid @RequestBody VerifyOtpRequest request) {    
-        Object result = userService.verifyEmail(request);
-        if(result instanceof ErrorResource errorResource) {
-            return ResponseEntity.status(errorResource.getStatus()).body(errorResource);
-        }
+    public ResponseEntity<MessageResource> verifyEmail(@Valid @RequestBody VerifyOtpRequest request) {
+        MessageResource result = userService.verifyEmail(request);
         return ResponseEntity.ok(result);
     }
 

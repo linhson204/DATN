@@ -11,12 +11,13 @@ import spring.api.demo.dto.product.request.ProductCreateAndUpdateRequest;
 import spring.api.demo.dto.product.response.ProductResponse;
 import spring.api.demo.entity.Product;
 import spring.api.demo.entity.ProductCategory;
+import spring.api.demo.exception.AppException;
+import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.mapper.ProductMapper;
 import spring.api.demo.repository.ProductCategoryRepository;
 import spring.api.demo.repository.ProductRepository;
 
 import java.math.BigDecimal;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -87,14 +88,14 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductResponse getById(UUID id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("PRODUCT_NOT_FOUND"));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         return productMapper.toResponse(product);
     }
 
     @Transactional
     public ProductResponse update(UUID id, ProductCreateAndUpdateRequest request) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("PRODUCT_NOT_FOUND"));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         ProductCategory category = getCategoryByCode(request.getCategoryCode());
 
         productMapper.updateEntity(product, request, category);
@@ -106,14 +107,14 @@ public class ProductService {
     @Transactional
     public void delete(UUID id) {
         if (!productRepository.existsById(id)) {
-            throw new NoSuchElementException("PRODUCT_NOT_FOUND");
+            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
         }
         productRepository.deleteById(id);
     }
 
     private ProductCategory getCategoryByCode(String categoryCode) {
         return productCategoryRepository.findByCode(categoryCode)
-                .orElseThrow(() -> new NoSuchElementException("CATEGORY_NOT_FOUND"));
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
     }
 
     private String normalizeFilterValue(String value) {
