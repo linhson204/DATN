@@ -2,6 +2,11 @@ package spring.api.demo.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import spring.api.demo.dto.common.PageResponse;
 import spring.api.demo.entity.CartItem;
 import spring.api.demo.dto.order.request.OrderCreateRequest;
 import spring.api.demo.dto.order.request.OrderStatusUpdateRequest;
@@ -92,8 +97,8 @@ public class OrderService {
                 .user(user)
                 .deliveryInfo(deliveryInfo)
                 .status(resolveStatus(request.getStatus()))
-                .shippingFee(shippingFee.floatValue())
-                .totalAmount(totalAmount.floatValue())
+                .shippingFee(shippingFee)
+                .totalAmount(totalAmount)
                 .build();
 
         Order savedOrder = orderRepository.save(order);
@@ -111,19 +116,20 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponse> getMyOrders(String email) {
+    public PageResponse<OrderResponse> getMyOrders(String email, int page, int size) {
         User user = getUserByEmail(email);
-        List<Order> orders = orderRepository.findByUserOrderByCreatedAtDesc(user);
-        return orderMapper.toOrderResponses(orders);
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50), Sort.by("createdAt").descending());
+        Page<Order> orders = orderRepository.findByUser(user, pageable);
+        return PageResponse.fromPage(orders.map(orderMapper::toOrderResponse));
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponse> getAllOrdersForAdmin(String email) {
+    public PageResponse<OrderResponse> getAllOrdersForAdmin(String email, int page, int size) {
         User user = getUserByEmail(email);
         validateAdmin(user);
-
-        List<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc();
-        return orderMapper.toOrderResponses(orders);
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), Sort.by("createdAt").descending());
+        Page<Order> orders = orderRepository.findAll(pageable);
+        return PageResponse.fromPage(orders.map(orderMapper::toOrderResponse));
     }
 
     @Transactional(readOnly = true)
@@ -172,7 +178,7 @@ public class OrderService {
     }
 
     private void validateShippingFee(Float shippingFee) {
-        if (shippingFee == null || shippingFee < 0) {
+        if (shippingFee == null || shippingFee < 0f) {
             throw new AppException(ErrorCode.INVALID_ORDER_AMOUNT);
         }
     }

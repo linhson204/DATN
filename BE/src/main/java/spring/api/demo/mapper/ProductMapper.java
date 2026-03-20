@@ -120,6 +120,7 @@ public class ProductMapper {
 
     private ProductVariantResponse toVariantResponse(ProductVariant variant) {
         return ProductVariantResponse.builder()
+                .id(variant.getId())
                 .sku(variant.getSku())
                 .size(variant.getSize())
                 .color(variant.getColor())

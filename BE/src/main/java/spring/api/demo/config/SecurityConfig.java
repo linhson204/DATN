@@ -58,7 +58,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/v1/product-categories", "/v1/product-categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/v1/product-categories", "/v1/product-categories/**").hasRole("ADMIN")
 
+                        // ========== GOONG ENDPOINTS (PUBLIC) ==========
+                        .requestMatchers("/v1/goong/**").permitAll()
 
+                        
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions

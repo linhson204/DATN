@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -21,8 +22,8 @@ public class OrderResponse {
     UUID id;
     UUID userId;
     String status;
-    Float shippingFee;
-    Float totalAmount;
+    BigDecimal shippingFee;
+    BigDecimal totalAmount;
     LocalDateTime createdAt;
     DeliveryInfoResponse deliveryInfo;
     List<OrderItemResponse> items;

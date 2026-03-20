@@ -13,6 +13,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,11 +52,11 @@ public class Order {
     @Column(name = "status", nullable = false)
     String status;
 
-    @Column(name = "shipping_fee", nullable = false)
-    Float shippingFee;
+    @Column(name = "shipping_fee", precision = 12, scale = 2, nullable = false)
+    BigDecimal shippingFee;
 
-    @Column(name = "total_amount", nullable = false)
-    Float totalAmount;
+    @Column(name = "total_amount", precision = 12, scale = 2, nullable = false)
+    BigDecimal totalAmount;
 
     @Builder.Default
     @ToString.Exclude

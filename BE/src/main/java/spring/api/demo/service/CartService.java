@@ -87,7 +87,7 @@ public class CartService {
         CartItem cartItem = cartItemRepository.findByIdAndUser(cartItemId, user)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_ITEM_NOT_FOUND));
 
-        cartItem.setIsSelected(!cartItem.getIsSelected());
+        cartItem.setIsSelected(!Boolean.TRUE.equals(cartItem.getIsSelected()));
         cartItemRepository.save(cartItem);
 
         return getMyCart(email);

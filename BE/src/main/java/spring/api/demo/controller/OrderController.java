@@ -10,13 +10,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import spring.api.demo.dto.common.PageResponse;
 import spring.api.demo.dto.order.request.OrderCreateRequest;
 import spring.api.demo.dto.order.request.OrderStatusUpdateRequest;
 import spring.api.demo.dto.order.response.OrderResponse;
 import spring.api.demo.resource.SuccessResource;
 import spring.api.demo.service.OrderService;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -37,16 +38,22 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<SuccessResource<List<OrderResponse>>> getMyOrders() {
+    public ResponseEntity<SuccessResource<PageResponse<OrderResponse>>> getMyOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<OrderResponse> response = orderService.getMyOrders(email);
+        PageResponse<OrderResponse> response = orderService.getMyOrders(email, page, size);
         return ResponseEntity.ok(new SuccessResource<>("Lấy danh sách đơn hàng thành công", response));
     }
 
     @GetMapping("/admin")
-    public ResponseEntity<SuccessResource<List<OrderResponse>>> getAllOrdersForAdmin() {
+    public ResponseEntity<SuccessResource<PageResponse<OrderResponse>>> getAllOrdersForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<OrderResponse> response = orderService.getAllOrdersForAdmin(email);
+        PageResponse<OrderResponse> response = orderService.getAllOrdersForAdmin(email, page, size);
         return ResponseEntity.ok(new SuccessResource<>("Lấy toàn bộ danh sách đơn hàng thành công", response));
     }
 

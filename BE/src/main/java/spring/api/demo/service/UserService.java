@@ -32,23 +32,28 @@ public class UserService implements UserServiceInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    @Autowired
-    private JwtService jwtService;
+    private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final OtpService otpService;
+    private final OtpValidRepository otpRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private OtpService otpService;
-
-    @Autowired
-    private OtpValidRepository otpRepository;
+    public UserService(
+            JwtService jwtService,
+            PasswordEncoder passwordEncoder,
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            OtpService otpService,
+            OtpValidRepository otpRepository
+    ) {
+        this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.otpService = otpService;
+        this.otpRepository = otpRepository;
+    }
 
     @Override
     public LoginResponse authenticate(LoginRequest request) {
