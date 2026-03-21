@@ -61,6 +61,10 @@ public class SecurityConfig {
                         // ========== GOONG ENDPOINTS (PUBLIC) ==========
                         .requestMatchers("/v1/goong/**").permitAll()
 
+
+                        //============ SHIPPING FEE ENDPOINTS (PUBLIC) ==========
+                        .requestMatchers("/v1/shipping-fee/**").permitAll()
+
                         
                         .anyRequest().authenticated()
                 )

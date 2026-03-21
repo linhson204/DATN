@@ -30,7 +30,7 @@ public class GoongService {
         this.restTemplate = new RestTemplate();
     }
 
-    public Object getDistance(String origin, String destination, String vehicle) {
+    public DistanceResponse.Leg.Distance getDistance(String origin, String destination, String vehicle) {
         // Xây dựng URL với query parameters
         URI url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/Direction")
                 .queryParam("origin", origin)
@@ -114,7 +114,7 @@ public class GoongService {
         }
     }
 
-    public Object calculationDistance(String origin, String destination, String vehicle) {
+    public DistanceResponse.Leg.Distance calculationDistance(String origin, String destination, String vehicle) {
         // Lấy tọa độ origin
         GeocodeResponse.Result originResult = (GeocodeResponse.Result) getCoordinatesByLocation(origin);
         if (originResult == null || originResult.getGeometry() == null || originResult.getGeometry().getLocation() == null) {
