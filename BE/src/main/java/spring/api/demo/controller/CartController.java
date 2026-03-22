@@ -21,7 +21,7 @@ import spring.api.demo.service.CartService;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("v1/cart")
+@RequestMapping("/v1/cart")
 public class CartController {
 
     private final CartService cartService;

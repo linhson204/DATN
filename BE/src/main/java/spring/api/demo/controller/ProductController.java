@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("v1/products")
+@RequestMapping("/v1/products")
 public class ProductController {
 
     private final ProductService productService;

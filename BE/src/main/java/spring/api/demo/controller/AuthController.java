@@ -1,12 +1,9 @@
 package spring.api.demo.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import spring.api.demo.config.JwtUtil;
 import spring.api.demo.dto.auth.request.BlacklistTokenRequest;
 import spring.api.demo.dto.auth.request.EmailReceiveOptRequest;
 import spring.api.demo.dto.auth.request.LoginRequest;
@@ -19,39 +16,27 @@ import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.resource.MessageResource;
 import spring.api.demo.entity.OtpValid;
 import spring.api.demo.entity.OtpValid.OtpType;
+import spring.api.demo.service.AuthServiceInterface;
 import spring.api.demo.service.BlacklistService;
 import spring.api.demo.service.JwtService;
 import spring.api.demo.service.OtpService;
-import spring.api.demo.service.impl.UserServiceInterface;
 import spring.api.demo.dto.auth.response.RefreshTokenResponse;
+import lombok.RequiredArgsConstructor;
 import java.util.Optional;
 
-@Validated
 @RestController
-@RequestMapping("v1/auth")
+@RequestMapping("/v1/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    private final UserServiceInterface userService;
-
-    @Autowired
-    private BlacklistService blacklistService;
-
-    @Autowired
-    private JwtService jwtService;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private OtpService otpService;
-
-    public AuthController(UserServiceInterface userService) {
-        this.userService = userService;
-    }
+    private final AuthServiceInterface authService;
+    private final BlacklistService blacklistService;
+    private final JwtService jwtService;
+    private final OtpService otpService;
 
     @PostMapping("login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        LoginResponse loginResponse = userService.authenticate(request);
+        LoginResponse loginResponse = authService.authenticate(request);
         return ResponseEntity.ok(loginResponse);
     }
 
@@ -79,10 +64,10 @@ public class AuthController {
             throw new AppException(ErrorCode.TOKEN_INVALID);
         }
 
-        String userId = jwtUtil.getUserIdFromJwt(refreshToken);
-        String email = jwtUtil.getEmailFromJwt(refreshToken);
-        String role = jwtUtil.getRoleFromJwt(refreshToken);
-        String username = jwtUtil.getUsernameFromJwt(refreshToken);
+        String userId = jwtService.getUserIdFromJwt(refreshToken);
+        String email = jwtService.getEmailFromJwt(refreshToken);
+        String role = jwtService.getRoleFromJwt(refreshToken);
+        String username = jwtService.getUsernameFromJwt(refreshToken);
 
         String newAccessToken = jwtService.generateToken(userId, email, role, username);
         String newRefreshToken = jwtService.generateRefreshToken(userId, email, role, username);
@@ -114,13 +99,13 @@ public class AuthController {
 
     @PostMapping("register")
     public ResponseEntity<MessageResource> register(@Valid @RequestBody RegisterRequest request) {
-        MessageResource result = userService.register(request);
+        MessageResource result = authService.register(request);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("verify-email")
     public ResponseEntity<MessageResource> verifyEmail(@Valid @RequestBody VerifyOtpRequest request) {
-        MessageResource result = userService.verifyEmail(request);
+        MessageResource result = authService.verifyEmail(request);
         return ResponseEntity.ok(result);
     }
 

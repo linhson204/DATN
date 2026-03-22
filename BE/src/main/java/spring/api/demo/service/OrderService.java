@@ -103,16 +103,16 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-            List<OrderItem> orderItems = cartItems.stream()
+        List<OrderItem> orderItems = cartItems.stream()
                 .map(cartItem -> orderMapper.toOrderItem(cartItem, savedOrder))
                 .toList();
-            orderItemRepository.saveAll(orderItems);
+        orderItemRepository.saveAll(orderItems);
 
-            savedOrder.setOrderItems(orderItems);
-            updateStockAfterCheckout(cartItems);
-                cartItemRepository.deleteByUserAndIsSelectedTrue(user);
+        savedOrder.setOrderItems(orderItems);
+        updateStockAfterCheckout(cartItems);
+        cartItemRepository.deleteByUserAndIsSelectedTrue(user);
 
-            return orderMapper.toOrderResponse(savedOrder);
+        return orderMapper.toOrderResponse(savedOrder);
     }
 
     @Transactional(readOnly = true)

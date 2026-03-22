@@ -21,7 +21,7 @@ import spring.api.demo.service.OrderService;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("v1/orders")
+@RequestMapping("/v1/orders")
 public class OrderController {
 
     private final OrderService orderService;

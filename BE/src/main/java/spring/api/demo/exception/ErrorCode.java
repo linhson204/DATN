@@ -45,6 +45,10 @@ public enum ErrorCode {
     // Validation
     VALIDATION_FAILED(HttpStatus.UNPROCESSABLE_ENTITY, "Dữ liệu không hợp lệ"),
 
+    // External API
+    GOONG_API_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "Không thể kết nối đến dịch vụ bản đồ Goong"),
+    SHIPPING_FEE_CALCULATION_ERROR(HttpStatus.UNPROCESSABLE_ENTITY, "Không thể tính phí vận chuyển"),
+
     // Server
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống, vui lòng thử lại sau");
 

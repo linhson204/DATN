@@ -8,7 +8,7 @@ import spring.api.demo.resource.SuccessResource;
 import spring.api.demo.service.ProductCategoryService;
 
 @RestController
-@RequestMapping("v1/product-categories")
+@RequestMapping("/v1/product-categories")
 public class ProductCategoryController {
 
     private final ProductCategoryService productCategoryService;

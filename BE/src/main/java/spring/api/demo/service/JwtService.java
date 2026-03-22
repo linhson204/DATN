@@ -5,12 +5,11 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import spring.api.demo.config.JwtConfig;
-import spring.api.demo.entity.BlacklistedToken;
 import spring.api.demo.entity.RefreshToken;
 import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.repository.BlacklistedTokenRepository;
@@ -30,16 +29,16 @@ public class JwtService {
 
     private final JwtConfig jwtConfig;
     private final Key key;
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    @Autowired
-    private BlacklistedTokenRepository blacklistedTokenRepository;
-
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-
-    public JwtService(JwtConfig jwtConfig) {
+    public JwtService(JwtConfig jwtConfig,
+                      BlacklistedTokenRepository blacklistedTokenRepository,
+                      RefreshTokenRepository refreshTokenRepository) {
         this.jwtConfig = jwtConfig;
         this.key = Keys.hmacShaKeyFor(jwtConfig.getSecretKey().getBytes());
+        this.blacklistedTokenRepository = blacklistedTokenRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     public String generateToken(String userId, String email, String role, String username) {
@@ -97,8 +96,6 @@ public class JwtService {
 
         return refreshToken;
     }
-
-
 
     public boolean isTokenFormatValid(String token) {
         try {
@@ -182,5 +179,39 @@ public class JwtService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    // ========== Methods merged from JwtUtil ==========
+
+    public String getUserIdFromJwt(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key).build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+    public String getEmailFromJwt(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key).build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("email", String.class);
+    }
+
+    public String getUsernameFromJwt(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key).build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("username", String.class);
+    }
+
+    public String getRoleFromJwt(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key).build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("role", String.class);
     }
 }

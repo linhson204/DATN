@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
 
+import lombok.RequiredArgsConstructor;
 import spring.api.demo.dto.shipping.request.ShippingFeeRequest;
 import spring.api.demo.dto.shipping.response.ShippingFeeResponse;
 import spring.api.demo.resource.SuccessResource;
@@ -13,17 +14,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/v1/shipping-fee")
+@RequiredArgsConstructor
 public class ShippingFeeController {
-    ShippingFeeService shippingFeeService;
 
-    public ShippingFeeController(ShippingFeeService shippingFeeService) {
-        this.shippingFeeService = shippingFeeService;
-    }
+    private final ShippingFeeService shippingFeeService;
 
-    @PostMapping()
-    public ResponseEntity<SuccessResource<ShippingFeeResponse>> postMethodName(@RequestBody ShippingFeeRequest request) {
+    @PostMapping
+    public ResponseEntity<SuccessResource<ShippingFeeResponse>> calculateShippingFee(@RequestBody ShippingFeeRequest request) {
         ShippingFeeResponse shippingFee = shippingFeeService.calculateShippingFee(request.getDestination());
         return ResponseEntity.ok(new SuccessResource<>("Tính phí vận chuyển", shippingFee));
     }
-    
+
 }

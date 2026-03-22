@@ -1,5 +1,6 @@
 package spring.api.demo.service;
 
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -9,8 +10,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import spring.api.demo.dto.goong.response.DistanceResponse;
 import spring.api.demo.dto.goong.response.GeocodeResponse;
 import spring.api.demo.dto.goong.response.LocationResponse;
-
-
+import spring.api.demo.exception.AppException;
+import spring.api.demo.exception.ErrorCode;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -26,13 +27,12 @@ public class GoongService {
 
     private final RestTemplate restTemplate;
 
-    public GoongService() {
-        this.restTemplate = new RestTemplate();
+    public GoongService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 
     public DistanceResponse.Leg.Distance getDistance(String origin, String destination, String vehicle) {
-        // Xây dựng URL với query parameters
-        URI url = UriComponentsBuilder.fromHttpUrl(baseUrl + "/Direction")
+        URI url = UriComponentsBuilder.fromUriString(baseUrl + "/Direction")
                 .queryParam("origin", origin)
                 .queryParam("destination", destination)
                 .queryParam("vehicle", vehicle)
@@ -42,103 +42,89 @@ public class GoongService {
                 .toUri();
 
         try {
-            // Gọi API và nhận response dưới dạng Object
             DistanceResponse response = restTemplate.getForObject(url, DistanceResponse.class);
             if (response == null
                     || response.getRoutes() == null
                     || response.getRoutes().isEmpty()
                     || response.getRoutes().get(0).getLegs() == null
                     || response.getRoutes().get(0).getLegs().isEmpty()) {
-                throw new RuntimeException("Goong không trả về dữ liệu khoảng cách hợp lệ");
+                throw new AppException(ErrorCode.GOONG_API_ERROR);
             }
             return response.getRoutes().get(0).getLegs().get(0).getDistance();
+        } catch (AppException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Không thể lấy chỉ đường từ Goong API: " + e.getMessage());
+            throw new AppException(ErrorCode.GOONG_API_ERROR);
         }
     }
 
-
     public Object getLocation(String address) {
-        // Xây dựng URL với query parameters và encode UTF-8
-        URI uri = UriComponentsBuilder.fromHttpUrl(baseUrl + "/Place/AutoComplete")
+        URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/Place/AutoComplete")
                 .queryParam("input", address)
                 .queryParam("api_key", apiKey)
                 .build()
                 .encode(StandardCharsets.UTF_8)
                 .toUri();
 
-
         try {
-            // Gọi API và nhận response dưới dạng LocationResponse
             ResponseEntity<LocationResponse> responseEntity = restTemplate.getForEntity(uri, LocationResponse.class);
             LocationResponse response = responseEntity.getBody();
-            
-            // Trả về prediction đầu tiên nếu có
+
             if (response != null && response.getPredictions() != null && !response.getPredictions().isEmpty()) {
                 return response.getPredictions();
             }
-            
+
             return null;
         } catch (Exception e) {
-            throw new RuntimeException("Không thể lấy dữ liệu địa điểm từ Goong API: " + e.getMessage());
+            throw new AppException(ErrorCode.GOONG_API_ERROR);
         }
     }
 
-
     public Object getCoordinatesByLocation(String address) {
-        // Xây dựng URL với query parameters và encode UTF-8
-        URI uri = UriComponentsBuilder.fromHttpUrl(baseUrl + "/geocode")
+        URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/geocode")
                 .queryParam("address", address)
                 .queryParam("api_key", apiKey)
                 .build()
                 .encode(StandardCharsets.UTF_8)
                 .toUri();
 
-
         try {
-            // Gọi API và nhận response dưới dạng GeocodeResponse
             ResponseEntity<GeocodeResponse> responseEntity = restTemplate.getForEntity(uri, GeocodeResponse.class);
             GeocodeResponse response = responseEntity.getBody();
-            
-            // Trả về result đầu tiên nếu có
+
             if (response != null && response.getResults() != null && !response.getResults().isEmpty()) {
                 GeocodeResponse.Result firstResult = response.getResults().get(0);
                 if (firstResult.getGeometry() != null && firstResult.getGeometry().getLocation() != null) {
                     return firstResult;
                 }
             }
-            
+
             return null;
         } catch (Exception e) {
-            throw new RuntimeException("Không thể lấy tọa độ từ Goong API: " + e.getMessage());
+            throw new AppException(ErrorCode.GOONG_API_ERROR);
         }
     }
 
     public DistanceResponse.Leg.Distance calculationDistance(String origin, String destination, String vehicle) {
-        // Lấy tọa độ origin
         GeocodeResponse.Result originResult = (GeocodeResponse.Result) getCoordinatesByLocation(origin);
         if (originResult == null || originResult.getGeometry() == null || originResult.getGeometry().getLocation() == null) {
-            throw new RuntimeException("Không thể lấy tọa độ điểm đi: " + origin);
+            throw new AppException(ErrorCode.GOONG_API_ERROR);
         }
-        
+
         Double latOrigin = originResult.getGeometry().getLocation().getLat();
         Double lngOrigin = originResult.getGeometry().getLocation().getLng();
-        
-        // Lấy tọa độ destination
+
         GeocodeResponse.Result destinationResult = (GeocodeResponse.Result) getCoordinatesByLocation(destination);
         if (destinationResult == null || destinationResult.getGeometry() == null || destinationResult.getGeometry().getLocation() == null) {
-            throw new RuntimeException("Không thể lấy tọa độ điểm đến: " + destination);
+            throw new AppException(ErrorCode.GOONG_API_ERROR);
         }
-        
+
         Double latDestination = destinationResult.getGeometry().getLocation().getLat();
         Double lngDestination = destinationResult.getGeometry().getLocation().getLng();
-        
-        // Tạo chuỗi origin và destination với format "lat,lng"
+
         String originCoords = latOrigin + "," + lngOrigin;
         String destinationCoords = latDestination + "," + lngDestination;
-        
-        // Gọi API Direction với tọa độ
-        return getDistance(originCoords, destinationCoords, vehicle );
+
+        return getDistance(originCoords, destinationCoords, vehicle);
     }
 }
-

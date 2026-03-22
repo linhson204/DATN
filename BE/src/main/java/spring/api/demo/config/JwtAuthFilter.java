@@ -25,7 +25,6 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtUtil jwtUtil;
     private final JwtService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
     private final ObjectMapper objectMapper;
@@ -73,12 +72,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         try {
-            final String userId = jwtUtil.getUserIdFromJwt(jwt);
-            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            final String userId = jwtService.getUserIdFromJwt(jwt);
+            if (userId != null) {
 
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(userId);
 
-                String emailFromToken = jwtUtil.getEmailFromJwt(jwt);
+                String emailFromToken = jwtService.getEmailFromJwt(jwt);
                 if (emailFromToken == null || !emailFromToken.equals(userDetails.getUsername())) {
                     sendErrorResponse(response, ErrorCode.TOKEN_INVALID);
                     return;

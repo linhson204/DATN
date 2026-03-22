@@ -1,9 +1,9 @@
 package spring.api.demo.service;
 
 import io.jsonwebtoken.Claims;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import spring.api.demo.dto.auth.request.BlacklistTokenRequest;
 import spring.api.demo.entity.BlacklistedToken;
@@ -15,15 +15,13 @@ import spring.api.demo.resource.MessageResource;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class BlacklistService {
 
     private static final Logger logger = LoggerFactory.getLogger(BlacklistService.class);
 
-    @Autowired
-    private BlacklistedTokenRepository blacklistedTokenRepository;
-
-    @Autowired
-    private JwtService jwtService;
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
+    private final JwtService jwtService;
 
     public MessageResource create(BlacklistTokenRequest request) {
         if (blacklistedTokenRepository.existsByToken(request.getToken())) {

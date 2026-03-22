@@ -12,7 +12,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 import spring.api.demo.dto.auth.response.LoginResponse;
-import spring.api.demo.service.UserService;
+import spring.api.demo.service.AuthService;
 
 import java.io.IOException;
 
@@ -22,7 +22,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private static final Logger logger = LoggerFactory.getLogger(OAuth2AuthenticationSuccessHandler.class);
 
-    private final UserService userService;
+    private final AuthService authService;
 
     @Value("${oauth2.redirect-uri}")
     private String redirectUri;
@@ -38,7 +38,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String name = oAuth2User.getAttribute("name");
 
         try {
-            LoginResponse loginResponse = userService.loginOrRegisterOAuth2(email, name);
+            LoginResponse loginResponse = authService.loginOrRegisterOAuth2(email, name);
             String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
                     .queryParam("token", loginResponse.getToken())
                     .queryParam("refreshToken", loginResponse.getRefreshToken())
