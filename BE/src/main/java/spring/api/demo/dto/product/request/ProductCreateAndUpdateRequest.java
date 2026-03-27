@@ -46,6 +46,8 @@ public class ProductCreateAndUpdateRequest {
 
     Boolean status;
 
+    String materialCode;
+
     @NotNull(message = "Attributes khong duoc de null")
     @NotEmpty(message = "Attributes phai co it nhat 1 thuoc tinh")
     @Valid

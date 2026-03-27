@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import spring.api.demo.dto.material.response.MaterialDictionaryResponse;
 import spring.api.demo.entity.Product;
 
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ public class ProductResponse {
     String name;
     String brand;
     ProductCategoryResponse category;
+    MaterialDictionaryResponse material;
     Product.TargetGender targetGender;
     String description;
     BigDecimal originalPrice;

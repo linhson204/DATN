@@ -46,10 +46,10 @@ public class SecurityConfig {
 
                         // ========== PROTECTED ENDPOINTS ==========
                         .requestMatchers(HttpMethod.GET, "/v1/products", "/v1/products/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/v1/products", "/v1/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/v1/products", "/v1/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/v1/products", "/v1/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/v1/products", "/v1/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/v1/products", "/v1/products/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/v1/products", "/v1/products/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/v1/products", "/v1/products/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/v1/products", "/v1/products/{id}").hasRole("ADMIN")
 
 
                         .requestMatchers(HttpMethod.GET, "/v1/product-categories", "/v1/product-categories/**").permitAll()
@@ -61,9 +61,21 @@ public class SecurityConfig {
                         // ========== GOONG ENDPOINTS (PUBLIC) ==========
                         .requestMatchers("/v1/goong/**").permitAll()
 
+                        // ========== MATERIAL ENDPOINTS ==========
+                        .requestMatchers(HttpMethod.GET, "/v1/materials", "/v1/materials/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/materials", "/v1/materials/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/v1/materials", "/v1/materials/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/v1/materials", "/v1/materials/**").hasRole("ADMIN")
+
 
                         //============ SHIPPING FEE ENDPOINTS (PUBLIC) ==========
                         .requestMatchers("/v1/shipping-fee/**").permitAll()
+
+                        // ========== VIEW LOG ENDPOINTS ==========
+                        .requestMatchers(HttpMethod.POST, "/v1/products/{id}/view").permitAll()
+
+                        // ========== RECOMMENDATION ENDPOINTS (PUBLIC) ==========
+                        .requestMatchers(HttpMethod.GET, "/v1/recommendations/**").permitAll()
 
                         
                         .anyRequest().authenticated()

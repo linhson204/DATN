@@ -21,6 +21,10 @@ public enum ErrorCode {
     PRODUCT_VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "Biến thể sản phẩm không tồn tại"),
     PRODUCT_VARIANT_UNAVAILABLE(HttpStatus.UNPROCESSABLE_ENTITY, "Sản phẩm tạm thời không còn kinh doanh"),
 
+    // Material
+    MATERIAL_NOT_FOUND(HttpStatus.NOT_FOUND, "Chất liệu không tồn tại"),
+    MATERIAL_CODE_ALREADY_EXISTS(HttpStatus.UNPROCESSABLE_ENTITY, "Mã chất liệu đã tồn tại"),
+
     // Cart
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Sản phẩm trong giỏ hàng không tồn tại"),
     CART_EMPTY(HttpStatus.UNPROCESSABLE_ENTITY, "Giỏ hàng đang trống"),

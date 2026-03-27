@@ -1,12 +1,14 @@
 package spring.api.demo.mapper;
 
 import org.springframework.stereotype.Component;
+import spring.api.demo.dto.material.response.MaterialDictionaryResponse;
 import spring.api.demo.dto.product.request.ProductAttributeUpsertRequest;
 import spring.api.demo.dto.product.request.ProductCreateAndUpdateRequest;
 import spring.api.demo.dto.product.request.ProductVariantUpsertRequest;
 import spring.api.demo.dto.product.response.ProductAttributeResponse;
 import spring.api.demo.dto.product.response.ProductResponse;
 import spring.api.demo.dto.product.response.ProductVariantResponse;
+import spring.api.demo.entity.MaterialDictionary;
 import spring.api.demo.entity.Product;
 import spring.api.demo.entity.ProductAttribute;
 import spring.api.demo.entity.ProductCategory;
@@ -24,11 +26,12 @@ public class ProductMapper {
         this.productCategoryMapper = productCategoryMapper;
     }
 
-    public Product toNewEntity(ProductCreateAndUpdateRequest request, ProductCategory category) {
+    public Product toNewEntity(ProductCreateAndUpdateRequest request, ProductCategory category, MaterialDictionary material) {
         Product product = Product.builder()
                 .name(request.getName())
                 .brand(request.getBrand())
                 .category(category)
+                .material(material)
                 .targetGender(request.getTargetGender())
                 .description(request.getDescription())
                 .originalPrice(request.getOriginalPrice())
@@ -39,14 +42,15 @@ public class ProductMapper {
                 .variants(new ArrayList<>())
                 .build();
         replaceAttributes(product, request.getAttributes());
-            replaceVariants(product, request.getVariants());
+        replaceVariants(product, request.getVariants());
         return product;
     }
 
-    public void updateEntity(Product product, ProductCreateAndUpdateRequest request, ProductCategory category) {
+    public void updateEntity(Product product, ProductCreateAndUpdateRequest request, ProductCategory category, MaterialDictionary material) {
         product.setName(request.getName());
         product.setBrand(request.getBrand());
         product.setCategory(category);
+        product.setMaterial(material);
         product.setTargetGender(request.getTargetGender());
         product.setDescription(request.getDescription());
         product.setOriginalPrice(request.getOriginalPrice());
@@ -57,11 +61,17 @@ public class ProductMapper {
     }
 
     public ProductResponse toResponse(Product product) {
+        MaterialDictionaryResponse materialResponse = null;
+        if (product.getMaterial() != null) {
+            materialResponse = toMaterialResponse(product.getMaterial());
+        }
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .brand(product.getBrand())
                 .category(productCategoryMapper.toResponse(product.getCategory()))
+                .material(materialResponse)
                 .targetGender(product.getTargetGender())
                 .description(product.getDescription())
                 .originalPrice(product.getOriginalPrice())
@@ -76,6 +86,20 @@ public class ProductMapper {
                     .toList())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
+                .build();
+    }
+
+    private MaterialDictionaryResponse toMaterialResponse(MaterialDictionary material) {
+        return MaterialDictionaryResponse.builder()
+                .id(material.getId())
+                .code(material.getCode())
+                .name(material.getName())
+                .qualityScore(material.getQualityScore())
+                .breathabilityScore(material.getBreathabilityScore())
+                .durabilityScore(material.getDurabilityScore())
+                .softnessScore(material.getSoftnessScore())
+                .warmthScore(material.getWarmthScore())
+                .createdAt(material.getCreatedAt())
                 .build();
     }
 

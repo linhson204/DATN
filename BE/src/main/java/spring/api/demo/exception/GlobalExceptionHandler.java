@@ -1,6 +1,8 @@
 package spring.api.demo.exception;
 
 import org.springframework.http.ResponseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +15,8 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResource> handleAppException(AppException ex) {
@@ -41,6 +45,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResource> handleGenericException(Exception ex) {
-        return new ResponseEntity<>(new ErrorResource(ErrorCode.INTERNAL_SERVER_ERROR), ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus());
+        log.error("Unhandled exception", ex);
+
+        Map<String, String> debug = new HashMap<>();
+        debug.put("debugMessage", ex.getClass().getSimpleName() + ": " + ex.getMessage());
+
+        return new ResponseEntity<>(
+                new ErrorResource(ErrorCode.INTERNAL_SERVER_ERROR, debug),
+                ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus()
+        );
     }
 }

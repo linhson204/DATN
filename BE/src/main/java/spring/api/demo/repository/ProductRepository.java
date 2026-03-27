@@ -10,19 +10,20 @@ import org.springframework.stereotype.Repository;
 import spring.api.demo.entity.Product;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Override
-    @EntityGraph(attributePaths = {"category", "attributes"})
+    @EntityGraph(attributePaths = {"category", "attributes", "material"})
     Page<Product> findAll(Pageable pageable);
 
     @Override
-    @EntityGraph(attributePaths = {"category", "attributes"})
+    @EntityGraph(attributePaths = {"category", "attributes", "material"})
     java.util.Optional<Product> findById(UUID id);
 
-        @EntityGraph(attributePaths = {"category", "attributes"})
+        @EntityGraph(attributePaths = {"category", "attributes", "material"})
         @Query("""
             SELECT p
             FROM Product p
@@ -39,4 +40,82 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable
         );
+
+    // ── Candidate Generation Queries ──
+
+    @Query("""
+        SELECT p FROM Product p
+        LEFT JOIN FETCH p.category
+        LEFT JOIN FETCH p.material
+        WHERE p.brand = :brand
+          AND p.id <> :excludeId
+          AND p.status = true
+          AND p.totalStock > 0
+        ORDER BY p.salePrice ASC
+        """)
+    List<Product> findCandidatesByBrand(
+            @Param("brand") String brand,
+            @Param("excludeId") UUID excludeId,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT p FROM Product p
+        LEFT JOIN FETCH p.category
+        LEFT JOIN FETCH p.material
+        WHERE p.category.id = :categoryId
+          AND p.id <> :excludeId
+          AND p.status = true
+          AND p.totalStock > 0
+        ORDER BY p.salePrice ASC
+        """)
+    List<Product> findCandidatesByCategoryId(
+            @Param("categoryId") UUID categoryId,
+            @Param("excludeId") UUID excludeId,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT p FROM Product p
+        LEFT JOIN FETCH p.category
+        LEFT JOIN FETCH p.material
+        WHERE p.salePrice BETWEEN :minPrice AND :maxPrice
+          AND p.id <> :excludeId
+          AND p.status = true
+          AND p.totalStock > 0
+        ORDER BY ABS(p.salePrice - :seedPrice) ASC
+        """)
+    List<Product> findCandidatesByPriceRange(
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            @Param("seedPrice") BigDecimal seedPrice,
+            @Param("excludeId") UUID excludeId,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT p FROM Product p
+        LEFT JOIN FETCH p.category
+        LEFT JOIN FETCH p.material
+        WHERE p.material.id IN :materialIds
+          AND p.id <> :excludeId
+          AND p.status = true
+          AND p.totalStock > 0
+        ORDER BY p.salePrice ASC
+        """)
+    List<Product> findCandidatesByMaterialIds(
+            @Param("materialIds") List<UUID> materialIds,
+            @Param("excludeId") UUID excludeId,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT p FROM Product p
+        LEFT JOIN FETCH p.category
+        LEFT JOIN FETCH p.material
+        WHERE p.id IN :productIds
+          AND p.status = true
+          AND p.totalStock > 0
+        """)
+    List<Product> findAllByIdIn(@Param("productIds") List<UUID> productIds);
 }

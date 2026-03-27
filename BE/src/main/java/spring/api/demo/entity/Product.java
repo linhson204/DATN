@@ -1,6 +1,7 @@
 package spring.api.demo.entity;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -25,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Data
@@ -49,6 +51,10 @@ public class Product {
     @ManyToOne(optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     ProductCategory category;
+
+    @ManyToOne
+    @JoinColumn(name = "material_id")
+    MaterialDictionary material;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "target_gender", nullable = false, length = 20)
@@ -123,6 +129,23 @@ public class Product {
         @JsonValue
         public String toJson() {
             return value;
+        }
+
+        @JsonCreator
+        public static TargetGender fromJson(String raw) {
+            if (raw == null || raw.isBlank()) {
+                return null;
+            }
+
+            String normalized = raw.trim().toLowerCase(Locale.ROOT);
+            for (TargetGender gender : values()) {
+                if (gender.value.equals(normalized)
+                        || gender.name().toLowerCase(Locale.ROOT).equals(normalized)) {
+                    return gender;
+                }
+            }
+
+            throw new IllegalArgumentException("Unsupported targetGender: " + raw);
         }
     }
 }

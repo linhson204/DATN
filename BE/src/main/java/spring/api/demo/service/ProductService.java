@@ -9,11 +9,13 @@ import org.springframework.data.domain.Sort;
 import spring.api.demo.dto.common.PageResponse;
 import spring.api.demo.dto.product.request.ProductCreateAndUpdateRequest;
 import spring.api.demo.dto.product.response.ProductResponse;
+import spring.api.demo.entity.MaterialDictionary;
 import spring.api.demo.entity.Product;
 import spring.api.demo.entity.ProductCategory;
 import spring.api.demo.exception.AppException;
 import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.mapper.ProductMapper;
+import spring.api.demo.repository.MaterialDictionaryRepository;
 import spring.api.demo.repository.ProductCategoryRepository;
 import spring.api.demo.repository.ProductRepository;
 
@@ -30,23 +32,27 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductCategoryRepository productCategoryRepository;
+    private final MaterialDictionaryRepository materialDictionaryRepository;
     private final ProductMapper productMapper;
 
     public ProductService(
             ProductRepository productRepository,
             ProductCategoryRepository productCategoryRepository,
+            MaterialDictionaryRepository materialDictionaryRepository,
             ProductMapper productMapper
     ) {
         this.productRepository = productRepository;
         this.productCategoryRepository = productCategoryRepository;
+        this.materialDictionaryRepository = materialDictionaryRepository;
         this.productMapper = productMapper;
     }
 
     @Transactional
     public ProductResponse create(ProductCreateAndUpdateRequest request) {
         ProductCategory category = getCategoryByCode(request.getCategoryCode());
+        MaterialDictionary material = getMaterialByCode(request.getMaterialCode());
 
-        Product product = productMapper.toNewEntity(request, category);
+        Product product = productMapper.toNewEntity(request, category, material);
 
         Product saved = productRepository.save(product);
         return productMapper.toResponse(saved);
@@ -97,8 +103,9 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         ProductCategory category = getCategoryByCode(request.getCategoryCode());
+        MaterialDictionary material = getMaterialByCode(request.getMaterialCode());
 
-        productMapper.updateEntity(product, request, category);
+        productMapper.updateEntity(product, request, category, material);
 
         Product updated = productRepository.save(product);
         return productMapper.toResponse(updated);
@@ -115,6 +122,14 @@ public class ProductService {
     private ProductCategory getCategoryByCode(String categoryCode) {
         return productCategoryRepository.findByCode(categoryCode)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+    }
+
+    private MaterialDictionary getMaterialByCode(String materialCode) {
+        if (materialCode == null || materialCode.trim().isEmpty()) {
+            return null;
+        }
+        return materialDictionaryRepository.findByCode(materialCode.trim().toLowerCase())
+                .orElseThrow(() -> new AppException(ErrorCode.MATERIAL_NOT_FOUND));
     }
 
     private String normalizeFilterValue(String value) {
