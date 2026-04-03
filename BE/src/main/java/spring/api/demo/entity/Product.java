@@ -45,6 +45,9 @@ public class Product {
     @Column(nullable = false, length = 255)
     String name;
 
+    @Column(name = "image_url", length = 255)
+    String imageUrl;
+
     @Column(length = 150)
     String brand;
 
@@ -72,6 +75,16 @@ public class Product {
     @Builder.Default
     @Column(name = "total_stock", nullable = false)
     Integer totalStock = 0;
+
+    /** Tổng số lượt xem — denormalized cache, dùng làm popularity signal cho AI. */
+    @Builder.Default
+    @Column(name = "view_count", nullable = false)
+    Integer viewCount = 0;
+
+    /** Tổng số lượt mua — strong positive signal cho collaborative filtering. */
+    @Builder.Default
+    @Column(name = "purchase_count", nullable = false)
+    Integer purchaseCount = 0;
 
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
@@ -107,6 +120,12 @@ public class Product {
         }
         if (totalStock == null) {
             totalStock = 0;
+        }
+        if (viewCount == null) {
+            viewCount = 0;
+        }
+        if (purchaseCount == null) {
+            purchaseCount = 0;
         }
     }
 

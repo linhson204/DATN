@@ -33,37 +33,26 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Transactional
     @Override
     public void run(String... args) throws Exception {
-        // Role customerRole = roleRepository.findByName("customer")
-        //             .orElseGet(() -> roleRepository.save(Role.builder().name("customer").build()));
-        // User user2 = User.builder()
-        //             .username("Son")
-        //             .fullName("Nguyen Linh Son")
-        //             .email("linhson24032004@gmail.com")
-        //             .passwordHash("123456")
-        //             .phoneNumber("0123456789")
-        //             .address("123 Admin St, City, Country")
-        //             .role(customerRole)
-        //             .status(true)
-        //             .build();
-        // userRepository.save(user2);
-        if (isTableEmpty()) {
-            Role adminRole = roleRepository.findByName("admin")
-                    .orElseGet(() -> roleRepository.save(Role.builder().name("admin").build()));
+        boolean shouldSeed = true; // Set to false to skip seeding
+        if (shouldSeed) {
+            // Role adminRole = roleRepository.findByName("admin")
+            //         .orElseGet(() -> roleRepository.save(Role.builder().name("admin").build()));
 
-            String passwordEncoded = passwordEncoder.encode("123456");
+            // String passwordEncoded = passwordEncoder.encode("123456");
 
-            User user = User.builder()
-                    .username("admin")
-                    .fullName("Nguyen Linh Son")
-                    .email("admin@example.com")
-                    .passwordHash(passwordEncoded)
-                    .phoneNumber("0123456789")
-                    .address("123 Admin St, City, Country")
-                    .role(adminRole)
-                    .status(true)
-                    .build();
+            // User user = User.builder()
+            //         .username("admin")
+            //         .fullName("Nguyen Linh Son")
+            //         .email("admin@example.com")
+            //         .passwordHash(passwordEncoded)
+            //         .phoneNumber("0123456789")
+            //         .address("123 Admin St, City, Country")
+            //         .role(adminRole)
+            //         .status(true)
+            //         .build();
+            // shouldSeed = false; // Prevent re-seeding on next run
 
-            userRepository.save(user);
+            // userRepository.save(user);
             logger.info("Database has been seeded.");
         } else {
             logger.info("Database already has data. Skipping seeding.");

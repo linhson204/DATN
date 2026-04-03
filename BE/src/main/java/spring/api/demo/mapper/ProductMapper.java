@@ -95,10 +95,6 @@ public class ProductMapper {
                 .code(material.getCode())
                 .name(material.getName())
                 .qualityScore(material.getQualityScore())
-                .breathabilityScore(material.getBreathabilityScore())
-                .durabilityScore(material.getDurabilityScore())
-                .softnessScore(material.getSoftnessScore())
-                .warmthScore(material.getWarmthScore())
                 .createdAt(material.getCreatedAt())
                 .build();
     }

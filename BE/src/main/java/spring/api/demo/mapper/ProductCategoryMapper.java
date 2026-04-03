@@ -10,8 +10,9 @@ public class ProductCategoryMapper {
     public ProductCategoryResponse toResponse(ProductCategory category) {
         return ProductCategoryResponse.builder()
                 .id(category.getId())
-                .code(category.getCode())
-                .name(category.getName())
+                .articleType(category.getArticleType())
+                .subCategory(category.getSubCategory())
+                .masterCategory(category.getMasterCategory())
                 .build();
     }
 }

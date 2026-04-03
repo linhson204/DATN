@@ -30,24 +30,4 @@ public class MaterialDictionaryCreateRequest {
     @Max(value = 100, message = "Điểm chất lượng phải từ 0 đến 100")
     @Builder.Default
     Integer qualityScore = 50;
-
-    @Min(value = 0, message = "Điểm thoáng khí phải từ 0 đến 100")
-    @Max(value = 100, message = "Điểm thoáng khí phải từ 0 đến 100")
-    @Builder.Default
-    Integer breathabilityScore = 50;
-
-    @Min(value = 0, message = "Điểm bền phải từ 0 đến 100")
-    @Max(value = 100, message = "Điểm bền phải từ 0 đến 100")
-    @Builder.Default
-    Integer durabilityScore = 50;
-
-    @Min(value = 0, message = "Điểm mềm mại phải từ 0 đến 100")
-    @Max(value = 100, message = "Điểm mềm mại phải từ 0 đến 100")
-    @Builder.Default
-    Integer softnessScore = 50;
-
-    @Min(value = 0, message = "Điểm giữ ấm phải từ 0 đến 100")
-    @Max(value = 100, message = "Điểm giữ ấm phải từ 0 đến 100")
-    @Builder.Default
-    Integer warmthScore = 50;
 }

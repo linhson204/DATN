@@ -43,6 +43,11 @@ public class OrderItem {
     @JoinColumn(name = "variant_id", nullable = false)
     ProductVariant variant;
 
+    /** FK trực tiếp tới Product — dùng cho AI recommendation (tránh JOIN qua product_variants) */
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    Product product;
+
     @Column(name = "product_name", nullable = false, length = 255)
     String productName;
 

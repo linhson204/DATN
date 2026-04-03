@@ -16,6 +16,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductCategoryResponse {
     UUID id;
-    String code;
-    String name;
+    String articleType;
+    String subCategory;
+    String masterCategory;
 }

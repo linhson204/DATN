@@ -28,8 +28,8 @@ public class ProductCreateAndUpdateRequest {
 
     String brand;
 
-    @NotBlank(message = "Category code khong duoc de trong")
-    String categoryCode;
+    @NotBlank(message = "Article type khong duoc de trong")
+    String articleType;
 
     @NotNull(message = "Target gender khong duoc de trong")
     Product.TargetGender targetGender;

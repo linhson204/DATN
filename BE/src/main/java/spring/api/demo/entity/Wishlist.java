@@ -5,8 +5,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,31 +20,37 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Wishlist — Explicit positive feedback.
+ * Mỗi entry = 1 user "yêu thích" 1 sản phẩm.
+ * Dùng làm strong explicit signal cho AI recommendation (hybrid filtering).
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "product_categories")
-public class ProductCategory {
+@Table(
+    name = "wishlist",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uq_wishlist_user_product",
+        columnNames = {"user_id", "product_id"}
+    )
+)
+public class Wishlist {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 
-    @Column(name = "article_type", nullable = false, unique = true, length = 50)
-    String articleType;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    User user;
 
-    @Column(name = "sub_category", nullable = false, length = 120)
-    String subCategory;
-
-    @Column(name = "master_category", nullable = false, length = 120)
-    String masterCategory;
-
-    @Builder.Default
-    @Column(nullable = false)
-    Boolean status = true;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "product_id", nullable = false)
+    Product product;
 
     @Builder.Default
     @Column(name = "created_at", nullable = false)
@@ -51,9 +60,6 @@ public class ProductCategory {
     public void prePersist() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
-        }
-        if (status == null) {
-            status = true;
         }
     }
 }

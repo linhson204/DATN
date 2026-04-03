@@ -23,7 +23,7 @@ public class CandidateDTO {
     UUID productId;
     String productName;
     String brand;
-    String categoryCode;
+    String articleType;
     Product.TargetGender targetGender;
     BigDecimal salePrice;
     String materialCode;

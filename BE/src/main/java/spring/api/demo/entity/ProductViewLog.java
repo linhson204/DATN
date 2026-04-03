@@ -48,6 +48,10 @@ public class ProductViewLog {
     @Builder.Default
     ViewType viewType = ViewType.DETAIL_VIEW;
 
+    /** Thời gian user ở lại trang sản phẩm (giây). NULL nếu chưa rời trang hoặc không capture được. */
+    @Column(name = "duration_seconds")
+    Integer durationSeconds;
+
     @Builder.Default
     @Column(name = "created_at", nullable = false)
     LocalDateTime createdAt = LocalDateTime.now();
@@ -65,7 +69,7 @@ public class ProductViewLog {
     public enum ViewType {
         DETAIL_VIEW("detail_view"),
         QUICK_VIEW("quick_view"),
-        SEARCH_CLICK("search_click");
+        DEEP_VIEW("deep_view");
 
         private final String value;
 

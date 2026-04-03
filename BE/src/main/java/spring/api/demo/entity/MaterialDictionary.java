@@ -41,22 +41,6 @@ public class MaterialDictionary {
     Integer qualityScore = 50;
 
     @Builder.Default
-    @Column(name = "breathability_score", nullable = false)
-    Integer breathabilityScore = 50;
-
-    @Builder.Default
-    @Column(name = "durability_score", nullable = false)
-    Integer durabilityScore = 50;
-
-    @Builder.Default
-    @Column(name = "softness_score", nullable = false)
-    Integer softnessScore = 50;
-
-    @Builder.Default
-    @Column(name = "warmth_score", nullable = false)
-    Integer warmthScore = 50;
-
-    @Builder.Default
     @Column(name = "created_at", nullable = false)
     LocalDateTime createdAt = LocalDateTime.now();
 

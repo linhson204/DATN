@@ -26,7 +26,37 @@ public class ProductCategoryService {
     public List<ProductCategoryResponse> getAll() {
         return productCategoryRepository.findAll().stream()
                 .filter(category -> Boolean.TRUE.equals(category.getStatus()))
-            .map(productCategoryMapper::toResponse)
+                .map(productCategoryMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getMasterCategories() {
+        return productCategoryRepository.findDistinctActiveMasterCategories();
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getSubCategoriesByMasterCategory(String masterCategory) {
+        String normalizedMasterCategory = normalizeCategoryValue(masterCategory);
+        if (normalizedMasterCategory == null) {
+            return List.of();
+        }
+        return productCategoryRepository.findDistinctActiveSubCategoriesByMasterCategory(normalizedMasterCategory);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getArticleTypesBySubCategory(String subCategory) {
+        String normalizedSubCategory = normalizeCategoryValue(subCategory);
+        if (normalizedSubCategory == null) {
+            return List.of();
+        }
+        return productCategoryRepository.findActiveArticleTypesBySubCategory(normalizedSubCategory);
+    }
+
+    private String normalizeCategoryValue(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        return value.trim();
     }
 }

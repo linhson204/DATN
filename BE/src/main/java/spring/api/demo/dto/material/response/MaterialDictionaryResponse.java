@@ -20,9 +20,5 @@ public class MaterialDictionaryResponse {
     String code;
     String name;
     Integer qualityScore;
-    Integer breathabilityScore;
-    Integer durabilityScore;
-    Integer softnessScore;
-    Integer warmthScore;
     LocalDateTime createdAt;
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import spring.api.demo.dto.common.PageResponse;
 import spring.api.demo.dto.product.request.ProductCreateAndUpdateRequest;
+import spring.api.demo.dto.product.request.ProductLodViewRequest;
 import spring.api.demo.dto.product.response.ProductResponse;
 import spring.api.demo.entity.ProductViewLog;
 import spring.api.demo.entity.User;
@@ -56,16 +57,16 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<SuccessResource<PageResponse<ProductResponse>>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String categoryCode,
+            @RequestParam(required = false) String articleType,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice
     ) {
         PageResponse<ProductResponse> response = productService.getAll(
-                page, size, sortBy, sortDir, name, categoryCode, minPrice, maxPrice
+            page, size, sortBy, sortDir, name, articleType, minPrice, maxPrice
         );
         return ResponseEntity.ok(new SuccessResource<>("Lấy danh sách sản phẩm thành công", response));
     }
@@ -92,11 +93,15 @@ public class ProductController {
     public ResponseEntity<MessageResource> logProductView(
             @PathVariable UUID id,
             @RequestParam(required = false, defaultValue = "DETAIL_VIEW") ProductViewLog.ViewType viewType,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody (required = false) ProductLodViewRequest durationSeconds
     ) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        productViewLogService.logView(user.getId(), id, viewType);
+        if(durationSeconds.getDurationSeconds() < 10) {
+            return ResponseEntity.ok(new MessageResource("Thời gian xem quá ngắn, không ghi nhận lượt xem"));
+        }
+        productViewLogService.logView(user.getId(), id, viewType, durationSeconds.getDurationSeconds());
         return ResponseEntity.ok(new MessageResource("Đã ghi nhận lượt xem sản phẩm"));
     }
 }

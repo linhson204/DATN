@@ -7,6 +7,8 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE,
     phone_number VARCHAR(20),
     address TEXT,
+    gender VARCHAR(10) NULL COMMENT 'male | female | other',
+    birth_year SMALLINT NULL COMMENT 'Năm sinh — dùng để tính nhóm tuổi cho AI',
     role_id INT,
     status BOOLEAN DEFAULT TRUE,
     points INT DEFAULT 0,

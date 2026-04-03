@@ -11,7 +11,6 @@ import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.repository.ProductRepository;
 import spring.api.demo.repository.ProductViewLogRepository;
 import spring.api.demo.repository.UserRepository;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -33,21 +32,26 @@ public class ProductViewLogService {
     }
 
     @Transactional
-    public void logView(UUID userId, UUID productId, ProductViewLog.ViewType viewType) {
+    public void logView(UUID userId, UUID productId, ProductViewLog.ViewType viewType, int durationSeconds) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
+        ProductViewLog.ViewType resolvedViewType = resolveViewType(durationSeconds);
+
         ProductViewLog log = ProductViewLog.builder()
                 .user(user)
                 .product(product)
-                .viewType(viewType != null ? viewType : ProductViewLog.ViewType.DETAIL_VIEW)
+                .viewType(resolvedViewType)
+                .durationSeconds(durationSeconds)
                 .build();
 
         productViewLogRepository.save(log);
     }
 
+
+    // Lấy danh sách sản phẩm đã xem gần đây của người dùng, có thể giới hạn số lượng trả về
     @Transactional(readOnly = true)
     public List<ProductViewLog> getRecentViews(UUID userId, int limit) {
         return productViewLogRepository.findRecentViewsByUserId(
@@ -56,8 +60,19 @@ public class ProductViewLogService {
         );
     }
 
+    // Đếm số lần người dùng đã xem một sản phẩm cụ thể
     @Transactional(readOnly = true)
     public long getViewCount(UUID userId, UUID productId) {
         return productViewLogRepository.countByUserIdAndProductId(userId, productId);
+    }
+
+    private ProductViewLog.ViewType resolveViewType(int durationSeconds) {
+        if (durationSeconds < 60) {
+            return ProductViewLog.ViewType.QUICK_VIEW;
+        }
+        if (durationSeconds < 210) {
+            return ProductViewLog.ViewType.DETAIL_VIEW;
+        }
+        return ProductViewLog.ViewType.DEEP_VIEW;
     }
 }

@@ -2,6 +2,7 @@ package spring.api.demo.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import spring.api.demo.resource.SuccessResource;
@@ -21,5 +22,32 @@ public class ProductCategoryController {
     public ResponseEntity<?> getCategories() {
         return ResponseEntity.ok(new SuccessResource<>("Lấy danh sách danh mục thành công", productCategoryService.getAll()));
     }
-    
+
+    @GetMapping("/master-categories")
+    public ResponseEntity<?> getMasterCategories() {
+        return ResponseEntity.ok(new SuccessResource<>(
+                "Lấy danh sách master_category thành công",
+                productCategoryService.getMasterCategories()
+        ));
+    }
+
+    @GetMapping("/sub-categories")
+    public ResponseEntity<?> getSubCategoriesByMasterCategory(
+            @RequestParam(name = "master_category") String masterCategory
+    ) {
+        return ResponseEntity.ok(new SuccessResource<>(
+                "Lấy danh sách sub_category thành công",
+                productCategoryService.getSubCategoriesByMasterCategory(masterCategory)
+        ));
+    }
+
+    @GetMapping("/article-types")
+    public ResponseEntity<?> getArticleTypesBySubCategory(
+            @RequestParam(name = "sub_category") String subCategory
+    ) {
+        return ResponseEntity.ok(new SuccessResource<>(
+                "Lấy danh sách article_type thành công",
+                productCategoryService.getArticleTypesBySubCategory(subCategory)
+        ));
+    }
 }

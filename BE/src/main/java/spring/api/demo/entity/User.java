@@ -50,6 +50,14 @@ public class User {
     @JoinColumn(name = "role_id")
     Role role;
 
+    /** Giới tính: male | female | other. Dùng cho demographic-based recommendation. */
+    @Column(length = 10)
+    String gender;
+
+    /** Năm sinh, dùng để tính nhóm tuổi cho AI recommendation. */
+    @Column(name = "birth_year")
+    Short birthYear;
+
     @Builder.Default
     @Column(columnDefinition = "BOOLEAN DEFAULT TRUE")
     Boolean status = true;

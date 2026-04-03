@@ -49,7 +49,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse create(ProductCreateAndUpdateRequest request) {
-        ProductCategory category = getCategoryByCode(request.getCategoryCode());
+        ProductCategory category = getCategoryByArticleType(request.getArticleType());
         MaterialDictionary material = getMaterialByCode(request.getMaterialCode());
 
         Product product = productMapper.toNewEntity(request, category, material);
@@ -65,7 +65,7 @@ public class ProductService {
             String sortBy,
             String sortDir,
             String name,
-            String categoryCode,
+            String articleType,
             BigDecimal minPrice,
             BigDecimal maxPrice
     ) {
@@ -77,12 +77,12 @@ public class ProductService {
             : Sort.by(safeSortBy).descending();
 
         String safeName = normalizeFilterValue(name);
-        String safeCategoryCode = normalizeFilterValue(categoryCode);
+        String safeArticleType = normalizeFilterValue(articleType);
 
         Pageable pageable = PageRequest.of(safePage, safeSize, sort);
         Page<ProductResponse> pageResult = productRepository.search(
                 safeName,
-                safeCategoryCode,
+                safeArticleType,
                 minPrice,
                 maxPrice,
                 pageable
@@ -102,7 +102,7 @@ public class ProductService {
     public ProductResponse update(UUID id, ProductCreateAndUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-        ProductCategory category = getCategoryByCode(request.getCategoryCode());
+        ProductCategory category = getCategoryByArticleType(request.getArticleType());
         MaterialDictionary material = getMaterialByCode(request.getMaterialCode());
 
         productMapper.updateEntity(product, request, category, material);
@@ -119,8 +119,12 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    private ProductCategory getCategoryByCode(String categoryCode) {
-        return productCategoryRepository.findByCode(categoryCode)
+    private ProductCategory getCategoryByArticleType(String articleType) {
+        String normalizedArticleType = normalizeFilterValue(articleType);
+        if (normalizedArticleType == null) {
+            throw new AppException(ErrorCode.CATEGORY_NOT_FOUND);
+        }
+        return productCategoryRepository.findByArticleTypeIgnoreCaseAndStatusTrue(normalizedArticleType)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
     }
 

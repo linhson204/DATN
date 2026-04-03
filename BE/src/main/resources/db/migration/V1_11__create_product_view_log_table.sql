@@ -3,6 +3,7 @@ CREATE TABLE product_view_log (
     user_id     CHAR(36) NOT NULL,
     product_id  CHAR(36) NOT NULL,
     view_type   VARCHAR(20) NOT NULL DEFAULT 'detail_view',
+    duration_seconds INT NULL COMMENT 'Thời gian xem (giây) — implicit feedback quality signal cho AI',
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_product_view_log_user
         FOREIGN KEY (user_id) REFERENCES users(id)
