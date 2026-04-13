@@ -67,10 +67,10 @@ public class ProductViewLogService {
     }
 
     private ProductViewLog.ViewType resolveViewType(int durationSeconds) {
-        if (durationSeconds < 60) {
+        if (durationSeconds < 60 && durationSeconds > 6) {
             return ProductViewLog.ViewType.QUICK_VIEW;
         }
-        if (durationSeconds < 210) {
+        if (durationSeconds < 210 && durationSeconds >= 60) {
             return ProductViewLog.ViewType.DETAIL_VIEW;
         }
         return ProductViewLog.ViewType.DEEP_VIEW;

@@ -98,7 +98,7 @@ public class ProductController {
     ) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        if(durationSeconds.getDurationSeconds() < 10) {
+        if(durationSeconds.getDurationSeconds() <= 6) {
             return ResponseEntity.ok(new MessageResource("Thời gian xem quá ngắn, không ghi nhận lượt xem"));
         }
         productViewLogService.logView(user.getId(), id, viewType, durationSeconds.getDurationSeconds());

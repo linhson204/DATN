@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import spring.api.demo.service.EmailServiceInterface;
 
 @Service
 public class EmailForgotPasswordService implements EmailServiceInterface{

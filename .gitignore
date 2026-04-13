@@ -64,3 +64,29 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# ===========================
+# Python / Recommendation Service
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.venv/
+.venv-wsl/
+env/
+venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# recommendation-service specific data and models
+recommendation-service/data/*.csv
+recommendation-service/models/saved/*
+!recommendation-service/models/saved/.gitkeep
+
+# Exclude generated logs and txt files in recommendation service but keep requirements.txt
+recommendation-service/*.log
+recommendation-service/tmp_train_log.txt
