@@ -7,7 +7,8 @@ from pathlib import Path
 
 from config import settings
 from data.data_pipeline import build_engine, extract_interactions, save_interactions
-from data.feature_engineering import item_feature_tuples_for_catalog
+from data.feature_engineering import item_feature_tuples_for_catalog, user_feature_tuples_for_users
+from data.season import build_item_season_map
 from models.collaborative_filtering import ItemCollaborativeFiltering
 from models.fallback import PopularItemsFallback
 from models.lightfm_model import LightFMRecommender
@@ -21,7 +22,7 @@ def train_pipeline(mysql_url: str | None = None, include_wishlist: bool | None =
     Pipeline huấn luyện hoàn chỉnh:
     1. Trích xuất dữ liệu tương tác từ MySQL.
     2. Chia dữ liệu theo thời gian (time-based split).
-    3. Chuẩn bị feature cho sản phẩm.
+    3. Chuẩn bị feature cho sản phẩm và người dùng (giới tính, nhóm tuổi).
     4. Huấn luyện mô hình LightFM.
     5. Huấn luyện mô hình ItemCF (cho mục "Sản phẩm tương tự").
     6. Xây dựng danh sách fallback (sản phẩm phổ biến/trending) cho cold-start.
@@ -67,11 +68,15 @@ def train_pipeline(mysql_url: str | None = None, include_wishlist: bool | None =
     )
 
     # ------------------------------------------------------------------
-    # 3. Chuẩn bị feature cho sản phẩm
+    # 3. Chuẩn bị feature cho sản phẩm và người dùng
     # ------------------------------------------------------------------
     train_item_ids = set(train_df["product_id"].astype(str).tolist())
     item_features = item_feature_tuples_for_catalog(engine, allowed_item_ids=train_item_ids)
     logger.info("Item features prepared: %d items with features", len(item_features))
+
+    train_user_ids = set(train_df["user_id"].astype(str).tolist())
+    user_features = user_feature_tuples_for_users(engine, allowed_user_ids=train_user_ids)
+    logger.info("User features prepared: %d users with features", len(user_features))
 
     # ------------------------------------------------------------------
     # 4. Huấn luyện mô hình LightFM
@@ -93,7 +98,18 @@ def train_pipeline(mysql_url: str | None = None, include_wishlist: bool | None =
         settings.lightfm_learning_rate,
         settings.lightfm_epochs,
     )
-    recommender.fit(train_df, item_feature_tuples=item_features)
+    recommender.fit(
+        train_df,
+        item_feature_tuples=item_features,
+        user_feature_tuples=user_features,
+    )
+
+    # Gắn mapping product_id -> mùa vào recommender trước khi lưu artifact
+    logger.info("Building item season map from product_attributes...")
+    item_seasons = build_item_season_map(engine)
+    recommender.set_item_seasons(item_seasons)
+    logger.info("Item season map: %d products with season info", len(item_seasons))
+
     recommender.save_artifacts(settings.artifact_dir)
 
     # ------------------------------------------------------------------

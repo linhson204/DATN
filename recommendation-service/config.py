@@ -15,44 +15,44 @@ logic ứng dụng khỏi các giá trị cấu hình, làm cho mã nguồn dễ
 hơn khi triển khai trên các môi trường khác nhau.
 """
 class Settings(BaseSettings):
-    '''Cấu hình ứng dụng cho hệ thống đề xuất sản phẩm sử dụng LightFM.'''
+    # Cấu hình ứng dụng cho hệ thống đề xuất sản phẩm sử dụng LightFM.  
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
     )
 
-    '''Cấu hình kết nối cơ sở dữ liệu MySQL.'''
+    # Cấu hình kết nối cơ sở dữ liệu MySQL.
     mysql_url: str = Field(
         default="mysql+pymysql://root:password@localhost:3306/test",
         alias="MYSQL_URL",
     )
 
-    '''Đường dẫn lưu trữ dữ liệu tương tác và mô hình đã huấn luyện.'''
+    # Đường dẫn lưu trữ dữ liệu tương tác và mô hình đã huấn luyện.
     interactions_output_path: Path = Field(
         default=BASE_DIR / "data" / "interactions.csv",
         alias="INTERACTIONS_OUTPUT_PATH",
     )
 
-    '''Đường dẫn lưu trữ các tệp liên quan đến mô hình và dữ liệu đã xử lý.'''
+    # Đường dẫn lưu trữ các tệp liên quan đến mô hình và dữ liệu đã xử lý.
     artifact_dir: Path = Field(default=BASE_DIR / "models" / "saved", alias="ARTIFACT_DIR")
     model_path: Path = Field(default=BASE_DIR / "models" / "saved" / "lightfm_model.joblib", alias="MODEL_PATH")
     dataset_path: Path = Field(default=BASE_DIR / "models" / "saved" / "dataset.pkl", alias="DATASET_PATH")
     
-    '''Đường dẫn lưu trữ mô hình đề xuất sản phẩm dựa trên tương tác giữa
-      các sản phẩm (Item-based Collaborative Filtering).'''
+    # Đường dẫn lưu trữ mô hình đề xuất sản phẩm dựa trên tương tác giữa
+    #  các sản phẩm (Item-based Collaborative Filtering).
     similar_items_model_path: Path = Field(
         default=BASE_DIR / "models" / "saved" / "item_cf.joblib",
         alias="SIMILAR_ITEMS_MODEL_PATH",
     )
 
-    '''Đường dẫn lưu trữ dữ liệu fallback khi không có đủ tương tác để huấn luyện mô hình.'''
+    # Đường dẫn lưu trữ dữ liệu fallback khi không có đủ tương tác để huấn luyện mô hình.
     fallback_data_path: Path = Field(
         default=BASE_DIR / "models" / "saved" / "fallback.json",
         alias="FALLBACK_DATA_PATH",
     )
 
-    '''Đường dẫn lưu trữ các tệp đặc trưng người dùng và sản phẩm đã được xử lý.'''
+    # Đường dẫn lưu trữ các tệp đặc trưng người dùng và sản phẩm đã được xử lý.
     item_features_path: Path = Field(
         default=BASE_DIR / "models" / "saved" / "item_features.joblib",
         alias="ITEM_FEATURES_PATH",
@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     user_map_path: Path = Field(default=BASE_DIR / "models" / "saved" / "user_id_map.json", alias="USER_MAP_PATH")
     item_map_path: Path = Field(default=BASE_DIR / "models" / "saved" / "item_id_map.json", alias="ITEM_MAP_PATH")
 
-    '''Các tham số liên quan đến việc tạo tín hiệu tương tác từ dữ liệu lịch sử.'''
+   # Các tham số liên quan đến việc tạo tín hiệu tương tác từ dữ liệu lịch sử.
     view_lookback_days: int = Field(default=90, alias="VIEW_LOOKBACK_DAYS")
     order_lookback_days: int = Field(default=180, alias="ORDER_LOOKBACK_DAYS")
     wishlist_lookback_days: int = Field(default=180, alias="WISHLIST_LOOKBACK_DAYS")
@@ -69,8 +69,8 @@ class Settings(BaseSettings):
     coview_lookback_days: int = Field(default=30, alias="COVIEW_LOOKBACK_DAYS")
     coview_session_minutes: int = Field(default=30, alias="COVIEW_SESSION_MINUTES")
 
-    '''Các trọng số được sử dụng để tính toán tín hiệu tương tác từ các hành động 
-    khác nhau của người dùng.'''
+    # Các trọng số được sử dụng để tính toán tín hiệu tương tác từ các hành động 
+    # khác nhau của người dùng.
     quick_view_weight: float = Field(default=1.0, alias="QUICK_VIEW_WEIGHT")
     detail_view_weight: float = Field(default=2.0, alias="DETAIL_VIEW_WEIGHT")
     deep_view_weight: float = Field(default=3.0, alias="DEEP_VIEW_WEIGHT")
@@ -95,6 +95,10 @@ class Settings(BaseSettings):
     lightfm_num_threads: int = Field(default=4, alias="LIGHTFM_NUM_THREADS")
     lightfm_item_alpha: float = Field(default=1e-6, alias="LIGHTFM_ITEM_ALPHA")
     lightfm_user_alpha: float = Field(default=1e-6, alias="LIGHTFM_USER_ALPHA")
+
+    '''Cấu hình tính năng boost theo mùa (Season Boosting) tại inference-time.'''
+    enable_season_boost: bool = Field(default=True, alias="ENABLE_SEASON_BOOST")
+    season_boost_weight: float = Field(default=0.3, alias="SEASON_BOOST_WEIGHT")
 
 
 settings = Settings()

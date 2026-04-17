@@ -6,9 +6,10 @@ mô hình LightFM sẽ trả về một danh sách rỗng. Module này cung cấ
 một file JSON nhỏ để API rớt mạng hoặc không cần query database vẫn có kết quả gợi ý.
 
 Các chiến lược fallback (theo thứ tự ưu tiên):
-1. Nhóm sản phẩm nổi bật theo giới tính — nếu request có gửi lên target_gender.
-2. Sản phẩm xu hướng (Trending) — Sản phẩm có nhiều tương tác nhất trong N ngày gần đây nhất của lịch sử.
-3. Sản phẩm top mọi thời đại — Danh sách chung các sản phẩm phổ biến nhất toàn hệ thống.
+1. Nhóm sản phẩm nổi bật theo giới tính + nhóm tuổi — nếu request có gửi lên gender và age.
+2. Nhóm sản phẩm nổi bật theo giới tính — nếu request có gửi lên gender.
+3. Sản phẩm xu hướng (Trending) — Sản phẩm có nhiều tương tác nhất trong N ngày gần đây nhất của lịch sử.
+4. Sản phẩm top mọi thời đại — Danh sách chung các sản phẩm phổ biến nhất toàn hệ thống.
 """
 from __future__ import annotations
 
@@ -21,6 +22,14 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
+from data.feature_engineering import (
+    age_bucket_from_age,
+    age_bucket_from_birth_date,
+    age_bucket_from_birth_year,
+    load_user_profile_rows,
+)
+from data.season import ALL_SEASONS, build_item_season_map, get_current_season
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,7 +37,11 @@ class PopularItemsFallback:
     def __init__(self) -> None:
         self.overall: list[str] = []
         self.by_gender: dict[str, list[str]] = {}
+        self.by_gender_age: dict[str, list[str]] = {}
+        self.user_profiles: dict[str, dict[str, str]] = {}
         self.trending: list[str] = []
+        # Danh sách sản phẩm phổ biến theo mùa, kóa sẵn khi training để phuc vụ cold-start
+        self.by_season: dict[str, list[str]] = {}
 
     # ------------------------------------------------------------------
     # Xây dựng model từ dữ liệu tương tác và metadata sản phẩm
@@ -117,11 +130,87 @@ class PopularItemsFallback:
         except Exception:
             logger.warning("Failed to compute gender-based popular items, skipping", exc_info=True)
 
+        # --- Popular by season ---
+        try:
+            item_season_map = build_item_season_map(engine)
+            if item_season_map:
+                # Tạo cột season cho mỗi product trong DataFrame tương tác
+                df["_season"] = df["product_id"].map(
+                    lambda pid: item_season_map.get(pid, [None])[0]
+                )
+                for season in ALL_SEASONS:
+                    season_df = df[df["_season"] == season]
+                    if season_df.empty:
+                        continue
+                    season_popular = (
+                        season_df.groupby("product_id", as_index=False)["weight"]
+                        .sum()
+                        .sort_values("weight", ascending=False)["product_id"]
+                        .tolist()
+                    )
+                    instance.by_season[season] = season_popular[:top_n]
+                df.drop(columns=["_season"], inplace=True)
+        except Exception:
+            logger.warning("Failed to compute season-based popular items, skipping", exc_info=True)
+
+        # --- Popular by gender + age bucket ---
+        try:
+            user_profiles = load_user_profile_rows(engine)
+            if not user_profiles.empty:
+                user_profiles = user_profiles.copy()
+                user_profiles["user_id"] = user_profiles["user_id"].astype(str)
+                user_profiles["gender_key"] = (
+                    user_profiles["gender"].fillna("").astype(str).str.strip().str.upper()
+                )
+                user_profiles["age_bucket"] = user_profiles.apply(
+                    lambda row: age_bucket_from_birth_date(row.get("date_of_birth"))
+                    or age_bucket_from_birth_year(row.get("birth_year")),
+                    axis=1,
+                )
+
+                profile_records = user_profiles[
+                    (user_profiles["gender_key"] != "") | user_profiles["age_bucket"].notna()
+                ]
+                instance.user_profiles = {
+                    str(row.user_id): {
+                        "gender": str(row.gender_key),
+                        "age_bucket": str(row.age_bucket) if pd.notna(row.age_bucket) else "",
+                    }
+                    for row in profile_records.itertuples(index=False)
+                }
+
+                segmentation_profiles = user_profiles[
+                    (user_profiles["gender_key"] != "")
+                    & user_profiles["age_bucket"].notna()
+                ]
+
+                if not segmentation_profiles.empty:
+                    merged_profiles = df.merge(
+                        segmentation_profiles[["user_id", "gender_key", "age_bucket"]],
+                        on="user_id",
+                        how="inner",
+                    )
+
+                    for (gender_key, age_bucket), segment_df in merged_profiles.groupby(["gender_key", "age_bucket"]):
+                        segment_popular = (
+                            segment_df.groupby("product_id", as_index=False)["weight"]
+                            .sum()
+                            .sort_values("weight", ascending=False)["product_id"]
+                            .tolist()
+                        )
+                        key = f"{gender_key}:{age_bucket}"
+                        instance.by_gender_age[key] = segment_popular[:top_n]
+        except Exception:
+            logger.warning("Failed to compute gender+age popular items, skipping", exc_info=True)
+
         logger.info(
-            "Fallback built: overall=%d, trending=%d, genders=%s",
+            "Fallback built: overall=%d, trending=%d, genders=%s, gender_age_segments=%d, user_profiles=%d, seasons=%s",
             len(instance.overall),
             len(instance.trending),
             {g: len(v) for g, v in instance.by_gender.items()},
+            len(instance.by_gender_age),
+            len(instance.user_profiles),
+            {s: len(v) for s, v in instance.by_season.items()},
         )
         return instance
 
@@ -131,21 +220,45 @@ class PopularItemsFallback:
 
     def recommend(
         self,
+        user_id: Optional[str] = None,
         gender: Optional[str] = None,
+        age: Optional[int] = None,
         top_n: int = 20,
     ) -> tuple[list[str], str]:
         """
         Trả về danh sách (product_ids, tên_chiến_lược).
 
         Thứ tự ưu tiên các chiến lược:
-        1. Phổ biến theo giới tính (nếu *gender* được cung cấp và trong model có dữ liệu)
-        2. Trending (Sản phẩm đang lên xu hướng gần đây)
-        3. Phổ biến chung (nếu tất cả các chiến lược trên thất bại)
+        1. Phổ biến theo giới tính + nhóm tuổi (nếu có đủ gender và age)
+        2. Phổ biến theo giới tính
+        3. Phổ biến theo mùa hiện tại (bổ sung)
+        4. Trending (Sản phẩm đang lên xu hướng gần đây)
+        5. Phổ biến chung (nếu tất cả các chiến lược trên thất bại)
         """
-        if gender:
-            key = gender.upper()
-            if key in self.by_gender:
-                return self.by_gender[key][:top_n], f"popular_by_gender:{key}"
+        resolved_gender = gender.upper() if gender else None
+        resolved_age_bucket = age_bucket_from_age(age) if age is not None else None
+
+        if user_id is not None:
+            profile = self.user_profiles.get(str(user_id))
+            if profile:
+                if resolved_gender is None and profile.get("gender"):
+                    resolved_gender = profile["gender"]
+                if resolved_age_bucket is None and profile.get("age_bucket"):
+                    resolved_age_bucket = profile["age_bucket"]
+
+        if resolved_gender and resolved_age_bucket:
+            key = f"{resolved_gender}:{resolved_age_bucket}"
+            if key in self.by_gender_age:
+                return self.by_gender_age[key][:top_n], f"popular_by_gender_age:{key}"
+
+        if resolved_gender:
+            if resolved_gender in self.by_gender:
+                return self.by_gender[resolved_gender][:top_n], f"popular_by_gender:{resolved_gender}"
+
+        # Chiến lược mới: ưu tiên sản phẩm theo mùa hiện tại
+        current_season = get_current_season()
+        if current_season in self.by_season:
+            return self.by_season[current_season][:top_n], f"popular_by_season:{current_season}"
 
         if self.trending:
             return self.trending[:top_n], "trending"
@@ -162,7 +275,10 @@ class PopularItemsFallback:
         data = {
             "overall": self.overall,
             "by_gender": self.by_gender,
+            "by_gender_age": self.by_gender_age,
+            "user_profiles": self.user_profiles,
             "trending": self.trending,
+            "by_season": self.by_season,
         }
         output.write_text(json.dumps(data, ensure_ascii=True, indent=2), encoding="utf-8")
         logger.info("Fallback data saved to %s", output)
@@ -178,13 +294,17 @@ class PopularItemsFallback:
         instance = cls()
         instance.overall = data.get("overall", [])
         instance.by_gender = data.get("by_gender", {})
+        instance.by_gender_age = data.get("by_gender_age", {})
+        instance.user_profiles = data.get("user_profiles", {})
         instance.trending = data.get("trending", [])
+        instance.by_season = data.get("by_season", {})
 
         logger.info(
-            "Fallback loaded from %s: overall=%d, trending=%d, genders=%s",
+            "Fallback loaded from %s: overall=%d, trending=%d, genders=%s, seasons=%s",
             input_path,
             len(instance.overall),
             len(instance.trending),
             list(instance.by_gender.keys()),
+            list(instance.by_season.keys()),
         )
         return instance

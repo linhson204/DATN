@@ -32,9 +32,15 @@ class RecommendResponse(BaseModel):
         description=(
             "Which strategy produced the results: "
             "'personalized' (LightFM), "
+            "'popular_by_gender_age:MALE:25_34', "
             "'popular_by_gender:MALE/FEMALE/UNISEX', "
+            "'popular_by_season:Summer/Fall/Winter/Spring', "
             "'trending', or 'popular'."
         ),
+    )
+    season: str = Field(
+        default="",
+        description="Mùa hiện tại tại thời điểm gợi ý (Spring/Summer/Fall/Winter).",
     )
     recommendations: list[ScoreItem]
 

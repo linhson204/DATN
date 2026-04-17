@@ -13,6 +13,8 @@ from api.schemas import (
     ScoreResponse,
     SimilarItemsResponse,
 )
+from config import settings
+from data.season import get_current_season
 from models.collaborative_filtering import ItemCollaborativeFiltering
 from models.fallback import PopularItemsFallback
 from models.lightfm_model import LightFMRecommender
@@ -58,7 +60,11 @@ def score_candidates(
     giúp Backend (BE) có thể re-rank lại kết quả trước khi trả về cho client.
     """
     try:
-        scored = recommender.score_candidates(payload.user_id, payload.candidate_product_ids)
+        scored = recommender.score_candidates(
+            payload.user_id,
+            payload.candidate_product_ids,
+            season_boost_weight=settings.season_boost_weight if settings.enable_season_boost else 0.0,
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     except RuntimeError as exc:
@@ -85,6 +91,7 @@ def recommend_for_user(
     user_id: str,
     top_n: int = Query(20, ge=1, le=100),
     gender: str | None = Query(None, description="User gender hint for cold-start fallback (MALE/FEMALE/UNISEX)"),
+    age: int | None = Query(None, ge=0, le=120, description="User age hint for cold-start fallback"),
     recommender: LightFMRecommender = Depends(get_recommender),
     fallback: PopularItemsFallback = Depends(get_fallback),
 ) -> RecommendResponse:
@@ -94,15 +101,21 @@ def recommend_for_user(
     Quy trình hoạt động:
     1. Cố gắng dùng LightFM để gợi ý cá nhân hóa dựa trên lịch sử tương tác của user.
     2. Nếu user là mới (chưa có lịch sử) -> gọi fallback (cold-start).
-    3. Fallback sẽ trả về các sản phẩm phổ biến theo giới tính (nếu có), hoặc đang trending, 
-       hoặc top sản phẩm phổ biến nhất toàn hệ thống.
+     3. Fallback ưu tiên theo giới tính + độ tuổi (nếu có), sau đó theo giới tính,
+         rồi đến trending hoặc top phổ biến toàn hệ thống.
     """
     strategy = "personalized"
     recommendations: list[tuple[str, float]] = []
+    current_season = get_current_season()
+    boost_weight = settings.season_boost_weight if settings.enable_season_boost else 0.0
 
     # --- Try personalized recommendations first ---
     try:
-        recommendations = recommender.recommend_for_user(user_id, top_n=top_n)
+        recommendations = recommender.recommend_for_user(
+            user_id,
+            top_n=top_n,
+            season_boost_weight=boost_weight,
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     except RuntimeError as exc:
@@ -110,7 +123,7 @@ def recommend_for_user(
 
     # --- Cold-start fallback ---
     if not recommendations:
-        fallback_ids, strategy = fallback.recommend(gender=gender, top_n=top_n)
+        fallback_ids, strategy = fallback.recommend(user_id=user_id, gender=gender, age=age, top_n=top_n)
         # Assign decaying scores so ordering is preserved
         count = len(fallback_ids)
         recommendations = [
@@ -118,17 +131,24 @@ def recommend_for_user(
             for i, pid in enumerate(fallback_ids)
         ]
         logger.info(
-            "GET /recommend/%s cold-start fallback strategy=%s returned %d items",
+            "GET /recommend/%s cold-start fallback strategy=%s season=%s returned %d items",
             user_id,
             strategy,
+            current_season,
             len(recommendations),
         )
     else:
-        logger.info("GET /recommend/%s personalized returned %d items", user_id, len(recommendations))
+        logger.info(
+            "GET /recommend/%s personalized season=%s returned %d items",
+            user_id,
+            current_season,
+            len(recommendations),
+        )
 
     return RecommendResponse(
         user_id=user_id,
         strategy=strategy,
+        season=current_season,
         recommendations=[
             ScoreItem(product_id=product_id, score=score)
             for product_id, score in recommendations
