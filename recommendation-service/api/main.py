@@ -4,6 +4,7 @@ import logging
 import os
 
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.dependencies import get_fallback, get_item_cf, get_recommender, reload_all
 from api.schemas import (
@@ -25,6 +26,14 @@ app = FastAPI(
     title="Recommendation Scoring Service",
     version="0.2.0",
     description="FastAPI service for scoring, personalized recommendations, and similar items.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_allow_origins,
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=settings.cors_allow_methods,
+    allow_headers=settings.cors_allow_headers,
 )
 
 
@@ -63,7 +72,11 @@ def score_candidates(
         scored = recommender.score_candidates(
             payload.user_id,
             payload.candidate_product_ids,
+            user_gender=payload.gender,
             season_boost_weight=settings.season_boost_weight if settings.enable_season_boost else 0.0,
+            gender_match_boost_weight=(
+                settings.gender_match_boost_weight if settings.enable_gender_match_boost else 0.0
+            ),
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -101,8 +114,8 @@ def recommend_for_user(
     Quy trình hoạt động:
     1. Cố gắng dùng LightFM để gợi ý cá nhân hóa dựa trên lịch sử tương tác của user.
     2. Nếu user là mới (chưa có lịch sử) -> gọi fallback (cold-start).
-     3. Fallback ưu tiên theo giới tính + độ tuổi (nếu có), sau đó theo giới tính,
-         rồi đến trending hoặc top phổ biến toàn hệ thống.
+    3. Fallback ưu tiên theo giới tính + độ tuổi (nếu có), sau đó theo giới tính,
+        rồi đến trending hoặc top phổ biến toàn hệ thống.
     """
     strategy = "personalized"
     recommendations: list[tuple[str, float]] = []
@@ -114,7 +127,11 @@ def recommend_for_user(
         recommendations = recommender.recommend_for_user(
             user_id,
             top_n=top_n,
+            user_gender=gender,
             season_boost_weight=boost_weight,
+            gender_match_boost_weight=(
+                settings.gender_match_boost_weight if settings.enable_gender_match_boost else 0.0
+            ),
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

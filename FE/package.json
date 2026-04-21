@@ -1,12 +1,24 @@
 {
   "name": "auth-test-fe",
   "version": "1.0.0",
-  "description": "Simple FE to test authentication",
+  "description": "Frontend DATN - React TypeScript Vite",
   "scripts": {
     "dev": "vite --port 5173",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview --port 5173"
   },
   "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^6.0.3",
     "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.15.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^6.30.1"
   }
 }

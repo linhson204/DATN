@@ -65,7 +65,7 @@ public class ProductService {
             String sortBy,
             String sortDir,
             String name,
-            String articleType,
+            String subCategory,
             BigDecimal minPrice,
             BigDecimal maxPrice
     ) {
@@ -77,12 +77,12 @@ public class ProductService {
             : Sort.by(safeSortBy).descending();
 
         String safeName = normalizeFilterValue(name);
-        String safeArticleType = normalizeFilterValue(articleType);
+        String safeSubCategory = normalizeFilterValue(subCategory);
 
         Pageable pageable = PageRequest.of(safePage, safeSize, sort);
         Page<ProductResponse> pageResult = productRepository.search(
                 safeName,
-                safeArticleType,
+                safeSubCategory,
                 minPrice,
                 maxPrice,
                 pageable

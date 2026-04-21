@@ -1,6 +1,7 @@
 from pathlib import Path
+from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -99,6 +100,35 @@ class Settings(BaseSettings):
     '''Cấu hình tính năng boost theo mùa (Season Boosting) tại inference-time.'''
     enable_season_boost: bool = Field(default=True, alias="ENABLE_SEASON_BOOST")
     season_boost_weight: float = Field(default=0.3, alias="SEASON_BOOST_WEIGHT")
+
+    '''Cấu hình tăng điểm theo mức độ khớp giới tính giữa user và sản phẩm.'''
+    enable_gender_match_boost: bool = Field(default=True, alias="ENABLE_GENDER_MATCH_BOOST")
+    gender_match_boost_weight: float = Field(default=0.2, alias="GENDER_MATCH_BOOST_WEIGHT")
+
+    # Cấu hình CORS cho frontend gọi API từ trình duyệt.
+    cors_allow_origins: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
+            "http://localhost:4200",
+            "http://127.0.0.1:4200",
+        ],
+        alias="CORS_ALLOW_ORIGINS",
+    )
+    cors_allow_credentials: bool = Field(default=True, alias="CORS_ALLOW_CREDENTIALS")
+    cors_allow_methods: list[str] = Field(default_factory=lambda: ["*"], alias="CORS_ALLOW_METHODS")
+    cors_allow_headers: list[str] = Field(default_factory=lambda: ["*"], alias="CORS_ALLOW_HEADERS")
+
+    @field_validator("cors_allow_origins", "cors_allow_methods", "cors_allow_headers", mode="before")
+    @classmethod
+    def _parse_cors_csv(cls, value: Any) -> Any:
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return value
 
 
 settings = Settings()

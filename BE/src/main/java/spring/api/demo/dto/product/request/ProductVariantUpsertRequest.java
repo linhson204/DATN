@@ -23,6 +23,8 @@ public class ProductVariantUpsertRequest {
 
     String size;
 
+    String imageUrl;
+    
     String color;
 
     @NotNull(message = "stockQuantity khong duoc de trong")

@@ -61,12 +61,12 @@ public class ProductController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String articleType,
+            @RequestParam(required = false) String subCategory,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice
     ) {
         PageResponse<ProductResponse> response = productService.getAll(
-            page, size, sortBy, sortDir, name, articleType, minPrice, maxPrice
+            page, size, sortBy, sortDir, name, subCategory, minPrice, maxPrice
         );
         return ResponseEntity.ok(new SuccessResource<>("Lấy danh sách sản phẩm thành công", response));
     }

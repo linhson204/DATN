@@ -185,6 +185,7 @@ public class OrderService {
 
     private BigDecimal calculateSubtotal(List<CartItem> cartItems) {
         return cartItems.stream()
+                .filter(cartItem -> cartItem.getIsSelected())
                 .map(cartItem -> cartItem.getVariant().getSalePrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

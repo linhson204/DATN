@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 '''Lược đồ dữ liệu cho API, bao gồm các request và response.'''
 class ScoreRequest(BaseModel):
     user_id: str = Field(..., min_length=1)
+    gender: str | None = Field(None, description="Optional user gender hint (MALE/FEMALE/UNISEX)")
     candidate_product_ids: list[str] = Field(..., min_length=1)
 
     @field_validator("candidate_product_ids")

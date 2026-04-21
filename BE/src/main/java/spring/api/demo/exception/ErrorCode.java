@@ -32,6 +32,10 @@ public enum ErrorCode {
     INSUFFICIENT_STOCK(HttpStatus.UNPROCESSABLE_ENTITY, "Số lượng sản phẩm trong kho không đủ"),
     INVALID_QUANTITY(HttpStatus.UNPROCESSABLE_ENTITY, "Số lượng không hợp lệ"),
 
+    // Wishlist
+    WISHLIST_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Sản phẩm trong wishlist không tồn tại"),
+    WISHLIST_ITEM_ALREADY_EXISTS(HttpStatus.UNPROCESSABLE_ENTITY, "Sản phẩm đã tồn tại trong wishlist"),
+
     // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Đơn hàng không tồn tại"),
     INVALID_ORDER_STATUS(HttpStatus.UNPROCESSABLE_ENTITY, "Trạng thái đơn hàng không hợp lệ"),

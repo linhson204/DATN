@@ -29,13 +29,13 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             FROM Product p
             JOIN p.category c
             WHERE (:name IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')))
-              AND (:articleType IS NULL OR LOWER(c.articleType) = LOWER(:articleType))
+              AND (:subCategory IS NULL OR LOWER(c.subCategory) = LOWER(:subCategory))
               AND (:minPrice IS NULL OR p.salePrice >= :minPrice)
               AND (:maxPrice IS NULL OR p.salePrice <= :maxPrice)
             """)
         Page<Product> search(
             @Param("name") String name,
-            @Param("articleType") String articleType,
+            @Param("subCategory") String subCategory,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             Pageable pageable

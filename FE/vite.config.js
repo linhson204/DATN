@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  // Serve all HTML files, including oauth2/callback.html
-  appType: "mpa",
+  plugins: [react()],
 });

@@ -45,6 +45,9 @@ public class ProductVariant {
     @Column(length = 50)
     String color;
 
+    @Column(name = "image_url", length = 255)
+    String imageUrl;
+
     @Column(name = "stock_quantity", nullable = false)
     Integer stockQuantity;
 

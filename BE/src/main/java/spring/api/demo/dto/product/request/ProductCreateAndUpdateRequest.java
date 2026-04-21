@@ -28,6 +28,8 @@ public class ProductCreateAndUpdateRequest {
 
     String brand;
 
+    String imageUrl;
+
     @NotBlank(message = "Article type khong duoc de trong")
     String articleType;
 

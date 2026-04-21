@@ -49,6 +49,7 @@ public class ProductMapper {
     public void updateEntity(Product product, ProductCreateAndUpdateRequest request, ProductCategory category, MaterialDictionary material) {
         product.setName(request.getName());
         product.setBrand(request.getBrand());
+        product.setImageUrl(request.getImageUrl());
         product.setCategory(category);
         product.setMaterial(material);
         product.setTargetGender(request.getTargetGender());
@@ -70,6 +71,7 @@ public class ProductMapper {
                 .id(product.getId())
                 .name(product.getName())
                 .brand(product.getBrand())
+                .imageUrl(product.getImageUrl())
                 .category(productCategoryMapper.toResponse(product.getCategory()))
                 .material(materialResponse)
                 .targetGender(product.getTargetGender())
@@ -118,6 +120,7 @@ public class ProductMapper {
             ProductVariant variant = ProductVariant.builder()
                     .product(product)
                     .sku(request.getSku())
+                    .imageUrl(request.getImageUrl())
                     .size(request.getSize())
                     .color(request.getColor())
                     .stockQuantity(request.getStockQuantity())
@@ -142,6 +145,7 @@ public class ProductMapper {
         return ProductVariantResponse.builder()
                 .id(variant.getId())
                 .sku(variant.getSku())
+                .imageUrl(variant.getImageUrl())
                 .size(variant.getSize())
                 .color(variant.getColor())
                 .stockQuantity(variant.getStockQuantity())

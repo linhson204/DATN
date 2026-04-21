@@ -23,6 +23,7 @@ public class ProductResponse {
     UUID id;
     String name;
     String brand;
+    String imageUrl;
     ProductCategoryResponse category;
     MaterialDictionaryResponse material;
     Product.TargetGender targetGender;

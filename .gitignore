@@ -90,3 +90,6 @@ recommendation-service/models/saved/*
 # Exclude generated logs and txt files in recommendation service but keep requirements.txt
 recommendation-service/*.log
 recommendation-service/tmp_train_log.txt
+
+
+*.md

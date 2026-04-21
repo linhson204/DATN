@@ -35,24 +35,24 @@ public class DatabaseSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         boolean shouldSeed = true; // Set to false to skip seeding
         if (shouldSeed) {
-        //     Role adminRole = roleRepository.findByName("admin")
-        //             .orElseGet(() -> roleRepository.save(Role.builder().name("admin").build()));
+            // Role adminRole = roleRepository.findByName("admin")
+            //         .orElseGet(() -> roleRepository.save(Role.builder().name("admin").build()));
 
-        //     String passwordEncoded = passwordEncoder.encode("123456");
+            // String passwordEncoded = passwordEncoder.encode("123456");
 
-        //     User user = User.builder()
-        //             .username("admin")
-        //             .fullName("Nguyen Linh Son")
-        //             .email("admin@example.com")
-        //             .passwordHash(passwordEncoded)
-        //             .phoneNumber("0123456789")
-        //             .address("123 Admin St, City, Country")
-        //             .role(adminRole)
-        //             .status(true)
-        //             .build();
-        //     shouldSeed = false; // Prevent re-seeding on next run
+            // User user = User.builder()
+            //         .username("admin")
+            //         .fullName("Nguyen Linh Son")
+            //         .email("admin@example.com")
+            //         .passwordHash(passwordEncoded)
+            //         .phoneNumber("0123456789")
+            //         .address("123 Admin St, City, Country")
+            //         .role(adminRole)
+            //         .status(true)
+            //         .build();
+            // shouldSeed = false; // Prevent re-seeding on next run
 
-        //     userRepository.save(user);
+            // userRepository.save(user);
             logger.info("Database has been seeded.");
         } else {
             logger.info("Database already has data. Skipping seeding.");
