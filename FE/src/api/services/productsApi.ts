@@ -7,6 +7,10 @@ import type {
   ProductListQuery,
 } from "../../types/api";
 
+type RequestOptions = {
+  signal?: AbortSignal;
+};
+
 export const productsApi = {
   async list(query: ProductListQuery = {}): Promise<PageResponse<Product>> {
     const response = await http.get<unknown>("/v1/products", {
@@ -15,8 +19,10 @@ export const productsApi = {
     return unwrapApiResponse<PageResponse<Product>>(response.data);
   },
 
-  async byId(productId: string): Promise<Product> {
-    const response = await http.get<unknown>(`/v1/products/${productId}`);
+  async byId(productId: string, options?: RequestOptions): Promise<Product> {
+    const response = await http.get<unknown>(`/v1/products/${productId}`, {
+      signal: options?.signal,
+    });
     return unwrapApiResponse<Product>(response.data);
   },
 

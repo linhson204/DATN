@@ -1,5 +1,10 @@
-import type { KeyboardEvent } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function IconHeart() {
@@ -28,19 +33,63 @@ function IconUser() {
 
 export function AppLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   const handleLogout = async () => {
     await logout();
     navigate("/auth");
   };
 
-  const handleBrandKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const handleBrandKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       navigate("/");
     }
   };
+
+  const navigateFromMenu = (path: string) => {
+    setIsAccountOpen(false);
+    navigate(path);
+  };
+
+  useEffect(() => {
+    setIsAccountOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isAccountOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (!accountMenuRef.current?.contains(target)) {
+        setIsAccountOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsAccountOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isAccountOpen]);
 
   return (
     <div className="app-shell">
@@ -112,24 +161,70 @@ export function AppLayout() {
             <IconCart />
           </button>
 
-          <button
-            className="icon-button"
-            type="button"
-            onClick={() => navigate(isAuthenticated ? "/orders" : "/auth")}
-            aria-label="Tài khoản"
-          >
-            <IconUser />
-          </button>
-
           {isAuthenticated ? (
-            <button
-              className="btn btn-muted"
-              onClick={handleLogout}
-              type="button"
-            >
-              Đăng xuất
-            </button>
+            <div className="account-menu" ref={accountMenuRef}>
+              <button
+                className="icon-button account-trigger"
+                type="button"
+                aria-label="Mở menu tài khoản"
+                aria-haspopup="menu"
+                aria-expanded={isAccountOpen}
+                onClick={() => setIsAccountOpen((prev) => !prev)}
+              >
+                <IconUser />
+                <span className="account-trigger-label">
+                  {user?.name || "Tài khoản"}
+                </span>
+              </button>
+
+              {isAccountOpen && (
+                <div className="account-dropdown reveal-down" role="menu">
+                  <button
+                    className="account-dropdown-item"
+                    type="button"
+                    onClick={() => navigateFromMenu("/profile")}
+                  >
+                    Thông tin cá nhân
+                  </button>
+                  <button
+                    className="account-dropdown-item"
+                    type="button"
+                    onClick={() => navigateFromMenu("/change-password")}
+                  >
+                    Đổi mật khẩu
+                  </button>
+                  <button
+                    className="account-dropdown-item"
+                    type="button"
+                    onClick={() => navigateFromMenu("/orders")}
+                  >
+                    Đơn hàng
+                  </button>
+                  <button
+                    className="account-dropdown-item danger"
+                    type="button"
+                    onClick={() => {
+                      setIsAccountOpen(false);
+                      void handleLogout();
+                    }}
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
+            <button
+              className="icon-button"
+              type="button"
+              onClick={() => navigate("/auth")}
+              aria-label="Tài khoản"
+            >
+              <IconUser />
+            </button>
+          )}
+
+          {!isAuthenticated && (
             <button
               className="btn btn-primary"
               type="button"
@@ -140,28 +235,6 @@ export function AppLayout() {
           )}
         </div>
       </header>
-
-      {isAuthenticated && (
-        <div className="user-ribbon reveal-down">
-          <span>{user?.name ?? "User"}</span>
-          <small>{user?.email}</small>
-          <span className="role-pill">{user?.role ?? "customer"}</span>
-          <button
-            className="link-mini"
-            type="button"
-            onClick={() => navigate("/orders")}
-          >
-            Đơn hàng của tôi
-          </button>
-          <button
-            className="link-mini"
-            type="button"
-            onClick={() => navigate("/checkout")}
-          >
-            Thanh toán
-          </button>
-        </div>
-      )}
 
       <main className="page-frame">
         <Outlet />

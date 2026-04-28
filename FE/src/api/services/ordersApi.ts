@@ -8,6 +8,10 @@ import type {
   PageResponse,
 } from "../../types/api";
 
+type RequestOptions = {
+  signal?: AbortSignal;
+};
+
 export const orderStatuses: OrderStatus[] = [
   "PENDING",
   "CONFIRMED",
@@ -22,9 +26,14 @@ export const ordersApi = {
     return unwrapApiResponse<Order>(response.data);
   },
 
-  async listMine(page = 0, size = 10): Promise<PageResponse<Order>> {
+  async listMine(
+    page = 0,
+    size = 10,
+    options?: RequestOptions,
+  ): Promise<PageResponse<Order>> {
     const response = await http.get<unknown>("/v1/orders", {
       params: { page, size },
+      signal: options?.signal,
     });
     return unwrapApiResponse<PageResponse<Order>>(response.data);
   },

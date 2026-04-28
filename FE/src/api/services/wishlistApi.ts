@@ -7,9 +7,15 @@ import type {
   WishlistItem,
 } from "../../types/api";
 
+type RequestOptions = {
+  signal?: AbortSignal;
+};
+
 export const wishlistApi = {
-  async get(): Promise<Wishlist> {
-    const response = await http.get<unknown>("/v1/wishlist");
+  async get(options?: RequestOptions): Promise<Wishlist> {
+    const response = await http.get<unknown>("/v1/wishlist", {
+      signal: options?.signal,
+    });
     return unwrapApiResponse<Wishlist>(response.data);
   },
 

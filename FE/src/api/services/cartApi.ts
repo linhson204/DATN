@@ -2,9 +2,15 @@ import { http } from "../client";
 import { unwrapApiResponse } from "../helpers";
 import type { AddCartItemPayload, ApiMessage, Cart } from "../../types/api";
 
+type RequestOptions = {
+  signal?: AbortSignal;
+};
+
 export const cartApi = {
-  async get(): Promise<Cart> {
-    const response = await http.get<unknown>("/v1/cart");
+  async get(options?: RequestOptions): Promise<Cart> {
+    const response = await http.get<unknown>("/v1/cart", {
+      signal: options?.signal,
+    });
     return unwrapApiResponse<Cart>(response.data);
   },
 

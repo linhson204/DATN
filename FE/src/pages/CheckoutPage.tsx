@@ -4,6 +4,8 @@ import { cartApi, ordersApi, shippingApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import type { Cart, DeliveryInfo, Order } from "../types/api";
 import { formatCurrency } from "../utils/format";
+import { recordProductInteractionsBatch } from "../utils/productInteractions";
+import { useAuth } from "../context/AuthContext";
 
 type ShippingState = {
   shippingFee: number;
@@ -12,6 +14,7 @@ type ShippingState = {
 
 export function CheckoutPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [cart, setCart] = useState<Cart | null>(null);
   const [shipping, setShipping] = useState<ShippingState>(null);
@@ -105,6 +108,21 @@ export function CheckoutPage() {
         shippingFee,
         deliveryInfo,
       });
+
+      const orderCreatedAt =
+        response.createdAt &&
+        !Number.isNaN(new Date(response.createdAt).getTime())
+          ? new Date(response.createdAt)
+          : new Date();
+
+      recordProductInteractionsBatch(
+        selectedItems.map((item) => ({
+          userId: user?.id,
+          productId: item.productId,
+          eventType: "ORDER" as const,
+          interactedAt: orderCreatedAt,
+        })),
+      );
 
       setNotice("Tạo đơn hàng thành công.");
 

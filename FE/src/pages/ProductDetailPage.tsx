@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { cartApi, productsApi, recommendationApi, wishlistApi } from "../api/services";
+import {
+  cartApi,
+  productsApi,
+  recommendationApi,
+  wishlistApi,
+} from "../api/services";
 import { parseApiError } from "../api/helpers";
 import { useAuth } from "../context/AuthContext";
 import type {
@@ -9,6 +14,7 @@ import type {
   RecommendationCandidate,
 } from "../types/api";
 import { formatCurrency } from "../utils/format";
+import { recordProductInteraction } from "../utils/productInteractions";
 
 type SizeOption = {
   size: string;
@@ -70,7 +76,7 @@ function compareSize(a: string, b: string): number {
 
 export function ProductDetailPage() {
   const { id = "" } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [candidates, setCandidates] = useState<RecommendationCandidate[]>([]);
   const [recommendedProductsById, setRecommendedProductsById] = useState<
@@ -194,11 +200,17 @@ export function ProductDetailPage() {
         return;
       }
 
+      recordProductInteraction({
+        userId: user?.id,
+        productId: id,
+        eventType: "VIEW",
+      });
+
       void productsApi.logView(id, viewedSeconds).catch(() => {
         // View logging should never block navigation.
       });
     };
-  }, [id]);
+  }, [id, user?.id]);
 
   const productImages = useMemo(() => {
     if (!product) {
@@ -366,10 +378,19 @@ export function ProductDetailPage() {
       return;
     }
 
+    if (!product) {
+      return;
+    }
+
     try {
       await cartApi.add({
         variantId: selectedVariant.id,
         quantity,
+      });
+      recordProductInteraction({
+        userId: user?.id,
+        productId: product.id,
+        eventType: "CART",
       });
       setNotice("Đã thêm sản phẩm vào giỏ hàng.");
     } catch (rawError) {
@@ -594,7 +615,9 @@ export function ProductDetailPage() {
                     if (isInWishlist) {
                       // Lấy wishlist rồi tìm item tương ứng để xóa
                       const wl = await wishlistApi.get();
-                      const found = wl.items.find((i) => i.productId === product.id);
+                      const found = wl.items.find(
+                        (i) => i.productId === product.id,
+                      );
                       if (found) {
                         await wishlistApi.remove(found.wishlistItemId);
                       }
@@ -602,6 +625,11 @@ export function ProductDetailPage() {
                       setNotice("Đã xóa khỏi yêu thích.");
                     } else {
                       await wishlistApi.add({ productId: product.id });
+                      recordProductInteraction({
+                        userId: user?.id,
+                        productId: product.id,
+                        eventType: "WISHLIST",
+                      });
                       setIsInWishlist(true);
                       setNotice("Đã thêm vào yêu thích.");
                     }

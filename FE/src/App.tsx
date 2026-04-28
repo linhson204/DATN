@@ -5,11 +5,13 @@ import { AdminPage } from "./pages/AdminPage";
 import { AuthPage } from "./pages/AuthPage";
 import { CartPage } from "./pages/CartPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
+import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { OAuthCallbackPage } from "./pages/OAuthCallbackPage";
 import { OrderDetailPage } from "./pages/OrderDetailPage";
 import { OrdersPage } from "./pages/OrdersPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { WishlistPage } from "./pages/WishlistPage";
@@ -57,6 +59,24 @@ export default function App() {
           element={
             <ProtectedRoute>
               <OrdersPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePasswordPage />
             </ProtectedRoute>
           }
         />

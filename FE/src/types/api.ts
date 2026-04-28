@@ -222,6 +222,16 @@ export type PythonRecommendResponse = {
   productIds: string[];
 };
 
+export type SimilarItemScore = {
+  productId: string;
+  score: number;
+};
+
+export type SimilarResponse = {
+  productId: string;
+  similarItems: SimilarItemScore[];
+};
+
 export type ShippingFeeResponse = {
   shippingFee: number;
   distance: number;

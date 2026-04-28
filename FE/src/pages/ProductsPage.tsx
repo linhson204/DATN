@@ -12,6 +12,7 @@ import { parseApiError } from "../api/helpers";
 import { useAuth } from "../context/AuthContext";
 import type { PageResponse, Product, ProductListQuery } from "../types/api";
 import { formatCurrency } from "../utils/format";
+import { recordProductInteraction } from "../utils/productInteractions";
 
 const defaultQuery: ProductListQuery = {
   page: 0,
@@ -21,7 +22,7 @@ const defaultQuery: ProductListQuery = {
 };
 
 export function ProductsPage() {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const [query, setQuery] = useState<ProductListQuery>(defaultQuery);
   const [draftName, setDraftName] = useState("");
@@ -260,6 +261,11 @@ export function ProductsPage() {
       await cartApi.add({
         variantId: availableVariant.id,
         quantity: 1,
+      });
+      recordProductInteraction({
+        userId: user?.id,
+        productId: product.id,
+        eventType: "CART",
       });
       setNotice(`Đã thêm ${product.name} vào giỏ hàng.`);
     } catch (rawError) {
