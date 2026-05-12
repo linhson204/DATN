@@ -131,6 +131,7 @@ export type CartItem = {
   sku: string;
   size: string;
   color: string;
+  imageUrl: string | null;
   unitPrice: number;
   quantity: number;
   isSelected: boolean;
@@ -234,7 +235,22 @@ export type SimilarResponse = {
 
 export type ShippingFeeResponse = {
   shippingFee: number;
-  distance: number;
+  distance: string;
+};
+
+export type GoongLocationSuggestion = {
+  description: string;
+  place_id: string;
+  compound: {
+    district: string;
+    commune: string;
+    province: string;
+  };
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+    main_text_matched_substrings: unknown[];
+  };
 };
 
 export type WishlistItem = {

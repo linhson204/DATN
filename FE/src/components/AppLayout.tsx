@@ -5,6 +5,8 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "../context/AuthContext";
 
 function IconHeart() {
@@ -39,8 +41,13 @@ export function AppLayout() {
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/auth");
+    try {
+      await logout();
+      toast.success("Đăng xuất thành công!");
+      navigate("/auth");
+    } catch {
+      toast.error("Đăng xuất thất bại.");
+    }
   };
 
   const handleBrandKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -102,7 +109,7 @@ export function AppLayout() {
           tabIndex={0}
         >
           <div className="brand-logo" aria-hidden="true">
-            TS
+            ST
           </div>
           <div>
             <h1 className="brand-title">S and T</h1>
@@ -239,6 +246,18 @@ export function AppLayout() {
       <main className="page-frame">
         <Outlet />
       </main>
+
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="light"
+        style={{ zIndex: 9999 }}
+      />
     </div>
   );
 }

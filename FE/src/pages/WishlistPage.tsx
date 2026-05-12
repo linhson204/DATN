@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import { wishlistApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import type { WishlistItem } from "../types/api";
@@ -28,21 +29,16 @@ export function WishlistPage() {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const loadWishlist = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
-
     try {
       const wishlist = await wishlistApi.get();
       setItems(wishlist.items || []);
       setTotalItems(wishlist.totalItems ?? wishlist.items?.length ?? 0);
     } catch (rawError) {
-      const apiError = parseApiError(rawError);
-      setError(apiError.message);
+      toast.error(parseApiError(rawError).message);
     } finally {
       setIsLoading(false);
     }
@@ -54,19 +50,13 @@ export function WishlistPage() {
 
   const removeItem = async (item: WishlistItem) => {
     setRemovingId(item.wishlistItemId);
-    setError(null);
-    setNotice(null);
-
     try {
       await wishlistApi.remove(item.wishlistItemId);
-      setItems((prev) =>
-        prev.filter((i) => i.wishlistItemId !== item.wishlistItemId),
-      );
+      setItems((prev) => prev.filter((i) => i.wishlistItemId !== item.wishlistItemId));
       setTotalItems((prev) => Math.max(0, prev - 1));
-      setNotice(`Đã xóa "${item.productName}" khỏi danh sách yêu thích.`);
+      toast.success(`Đã xóa "${item.productName}" khỏi danh sách yêu thích.`);
     } catch (rawError) {
-      const apiError = parseApiError(rawError);
-      setError(apiError.message);
+      toast.error(parseApiError(rawError).message);
     } finally {
       setRemovingId(null);
     }
@@ -93,8 +83,6 @@ export function WishlistPage() {
           </Link>
         </div>
 
-        {notice && <p className="alert success">{notice}</p>}
-        {error && <p className="alert error">{error}</p>}
 
         {isLoading ? (
           <div className="wishlist-loading">

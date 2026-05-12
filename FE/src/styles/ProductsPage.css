@@ -1,0 +1,252 @@
+/* ============================================================
+   Products page
+   ============================================================ */
+
+.products-page {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+  grid-template-columns: minmax(260px, 290px) minmax(0, 1fr);
+}
+
+.products-filter-panel {
+  position: sticky;
+  top: 84px;
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+}
+
+.products-filter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.products-filter-head h2 {
+  margin: 0;
+  font-size: 1.85rem;
+  line-height: 1.1;
+}
+
+.products-filter-head .btn {
+  border-radius: 10px;
+  padding: 0.45rem 0.72rem;
+}
+
+.products-filter-section {
+  margin-top: 1rem;
+  padding-top: 0.95rem;
+  border-top: 1px solid #e8ebf1;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.products-filter-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+}
+
+.products-filter-section h3 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.category-root-button {
+  border: 1px solid #dfe4ec;
+  background: #f7f9fc;
+  color: #374151;
+  border-radius: 10px;
+  text-align: left;
+  font: inherit;
+  padding: 0.55rem 0.72rem;
+  cursor: pointer;
+}
+
+.category-root-button.active {
+  border-color: #4d84df;
+  color: #2d63c3;
+  background: #eef4ff;
+}
+
+.master-category-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.master-category-item {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.master-category-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.master-category-button {
+  border: 0;
+  border-radius: 9px;
+  text-align: left;
+  background: transparent;
+  color: #3f4349;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.38rem 0.28rem;
+  cursor: pointer;
+}
+
+.master-category-button.active {
+  color: #2f65c3;
+}
+
+.master-category-expand {
+  border: 0;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  background: #f2f5fa;
+  color: #4f5560;
+  cursor: pointer;
+}
+
+.master-category-expand.open {
+  background: #e9f1ff;
+  color: #2f65c3;
+}
+
+.sub-category-list {
+  margin: 0 0 0.4rem 0.5rem;
+  padding: 0.15rem 0 0 0.55rem;
+  list-style: none;
+  border-left: 2px solid #ebeff6;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.sub-category-button {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #4f5560;
+  font: inherit;
+  text-align: left;
+  padding: 0.33rem 0.45rem;
+  cursor: pointer;
+}
+
+.sub-category-button.active {
+  background: #ecf3ff;
+  color: #2d63c3;
+  font-weight: 600;
+}
+
+.price-range-grid {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.price-range-grid label {
+  display: grid;
+  gap: 0.28rem;
+  color: #3a3f47;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.price-range-grid input {
+  background: #ffffff;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.products-main-panel {
+  min-width: 0;
+}
+
+.products-main-toolbar {
+  margin: 0.75rem 0 0.9rem;
+  display: grid;
+  gap: 0.62rem;
+  align-items: end;
+  grid-template-columns: minmax(0, 1fr) minmax(176px, 220px) 110px auto;
+}
+
+.product-search-box {
+  position: relative;
+}
+
+.product-search-box input {
+  background: #ffffff;
+  border-color: #d8dde6;
+  padding-right: 2.5rem;
+}
+
+.product-search-button {
+  border: 0;
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: #f2f6fc;
+  cursor: pointer;
+}
+
+.compact-field {
+  display: grid;
+  gap: 0.26rem;
+  color: #3a3f47;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.compact-field select {
+  background: #ffffff;
+  border-color: #d8dde6;
+}
+
+@media (max-width: 1160px) {
+  .products-page {
+    grid-template-columns: 1fr;
+  }
+
+  .products-filter-panel {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .products-main-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .products-main-toolbar .btn {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .products-main-toolbar,
+  .price-range-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .products-filter-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

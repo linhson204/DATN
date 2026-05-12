@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import {
   cartApi,
   productsApi,
@@ -84,8 +85,6 @@ export function ProductDetailPage() {
   >({});
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -108,7 +107,6 @@ export function ProductDetailPage() {
 
       setIsLoading(true);
       setLoadError(null);
-      setActionError(null);
       setCandidates([]);
       setRecommendedProductsById({});
 
@@ -370,18 +368,11 @@ export function ProductDetailPage() {
   }, [selectedStock]);
 
   const addSelectedVariantToCart = async () => {
-    setActionError(null);
-    setNotice(null);
-
     if (!selectedVariant || !selectedVariant.status || selectedStock <= 0) {
-      setActionError("Variant đã hết hàng, vui lòng chọn size khác.");
+      toast.warning("Variant đã hết hàng, vui lòng chọn size khác.");
       return;
     }
-
-    if (!product) {
-      return;
-    }
-
+    if (!product) return;
     try {
       await cartApi.add({
         variantId: selectedVariant.id,
@@ -392,10 +383,9 @@ export function ProductDetailPage() {
         productId: product.id,
         eventType: "CART",
       });
-      setNotice("Đã thêm sản phẩm vào giỏ hàng.");
+      toast.success("Đã thêm sản phẩm vào giỏ hàng!");
     } catch (rawError) {
-      const apiError = parseApiError(rawError);
-      setActionError(apiError.message);
+      toast.error(parseApiError(rawError).message);
     }
   };
 
@@ -610,19 +600,15 @@ export function ProductDetailPage() {
                 onClick={async () => {
                   if (!isAuthenticated || wishlistLoading) return;
                   setWishlistLoading(true);
-                  setActionError(null);
                   try {
                     if (isInWishlist) {
-                      // Lấy wishlist rồi tìm item tương ứng để xóa
                       const wl = await wishlistApi.get();
-                      const found = wl.items.find(
-                        (i) => i.productId === product.id,
-                      );
+                      const found = wl.items.find((i) => i.productId === product.id);
                       if (found) {
                         await wishlistApi.remove(found.wishlistItemId);
                       }
                       setIsInWishlist(false);
-                      setNotice("Đã xóa khỏi yêu thích.");
+                      toast.success("Đã xóa khỏi yêu thích.");
                     } else {
                       await wishlistApi.add({ productId: product.id });
                       recordProductInteraction({
@@ -631,11 +617,10 @@ export function ProductDetailPage() {
                         eventType: "WISHLIST",
                       });
                       setIsInWishlist(true);
-                      setNotice("Đã thêm vào yêu thích.");
+                      toast.success("Đã thêm vào yêu thích! ♥");
                     }
                   } catch (rawErr) {
-                    const apiErr = parseApiError(rawErr);
-                    setActionError(apiErr.message);
+                    toast.error(parseApiError(rawErr).message);
                   } finally {
                     setWishlistLoading(false);
                   }
@@ -646,8 +631,6 @@ export function ProductDetailPage() {
               </button>
             </div>
 
-            {notice && <p className="alert success">{notice}</p>}
-            {actionError && <p className="alert error">{actionError}</p>}
 
             <section className="detail-description-panel">
               <h3>Mô tả sản phẩm</h3>

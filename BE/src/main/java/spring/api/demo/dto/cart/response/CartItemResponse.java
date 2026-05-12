@@ -25,6 +25,7 @@ public class  CartItemResponse {
     String sku;
     String size;
     String color;
+    String imageUrl;
     BigDecimal unitPrice;
     Integer quantity;
     Boolean isSelected;

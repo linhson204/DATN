@@ -43,6 +43,7 @@ public class CartMapper {
                 .productId(variant.getProduct().getId())
                 .productName(variant.getProduct().getName())
                 .productBrand(variant.getProduct().getBrand())
+                .imageUrl(variant.getProduct().getImageUrl())
                 .sku(variant.getSku())
                 .size(variant.getSize())
                 .color(variant.getColor())

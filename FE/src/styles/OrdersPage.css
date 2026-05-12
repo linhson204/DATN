@@ -1,0 +1,511 @@
+/* ============================================================
+   Account dropdown
+   ============================================================ */
+
+.account-menu {
+  position: relative;
+}
+
+.account-trigger {
+  width: auto;
+  height: auto;
+  border: 1px solid #e3e5ea;
+  border-radius: 999px;
+  padding: 0.42rem 0.74rem;
+  background: #f4f5f7;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.account-trigger svg {
+  width: 18px;
+  height: 18px;
+}
+
+.account-trigger-label {
+  max-width: 124px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #38404b;
+}
+
+.account-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  width: min(250px, 84vw);
+  border-radius: 12px;
+  border: 1px solid #e3e8f1;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(16, 20, 31, 0.12);
+  padding: 0.35rem;
+  display: grid;
+  gap: 0.2rem;
+  z-index: 90;
+}
+
+.account-dropdown-item {
+  width: 100%;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #313741;
+  text-align: left;
+  font: inherit;
+  font-size: 0.92rem;
+  padding: 0.58rem 0.65rem;
+  cursor: pointer;
+}
+
+.account-dropdown-item:hover {
+  background: #f4f6fb;
+  color: #2d63c3;
+}
+
+.account-dropdown-item.danger:hover {
+  background: #fff1f2;
+  color: #c2334a;
+}
+
+/* ============================================================
+   Orders page
+   ============================================================ */
+
+.orders-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.orders-page-header {
+  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.orders-loading-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #67707d;
+}
+
+.orders-loading-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #4d84df;
+  animation: pulseDot 0.9s ease infinite;
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.24);
+  }
+}
+
+.orders-empty-state {
+  border-radius: 12px;
+  border: 1px dashed #d7dce4;
+  padding: 1.2rem;
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
+
+.orders-empty-state h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.orders-overview-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.orders-overview-card {
+  border-radius: 12px;
+  border: 1px solid #e7ebf1;
+  background: #f8f9fc;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.orders-overview-card small {
+  color: #6d7683;
+}
+
+.orders-overview-card p {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.orders-list-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.orders-item-card {
+  border-radius: 14px;
+  border: 1px solid #e8ebf1;
+  background: #fbfcfe;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.72rem;
+}
+
+.orders-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.orders-item-top h3 {
+  margin: 0;
+  font-size: 1.04rem;
+}
+
+.orders-item-date {
+  margin-top: 0.2rem;
+  color: #6d7682;
+  font-size: 0.9rem;
+}
+
+.orders-metrics-grid {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.orders-metrics-grid > div {
+  border: 1px solid #edf0f5;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.58rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.orders-metrics-grid small {
+  color: #727b89;
+  font-size: 0.78rem;
+}
+
+.orders-metrics-grid p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.orders-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.orders-preview-pill,
+.orders-preview-more {
+  border-radius: 999px;
+  background: #eff4ff;
+  border: 1px solid #d8e4fb;
+  color: #3d67b7;
+  padding: 0.22rem 0.62rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.orders-preview-more {
+  background: #f4f5f8;
+  border-color: #e4e8ef;
+  color: #626a76;
+}
+
+.orders-item-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.orders-pagination-row {
+  margin-top: 0.4rem;
+}
+
+/* ============================================================
+   Order detail page
+   ============================================================ */
+
+.order-detail-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr);
+  gap: 1rem;
+}
+
+.order-detail-main-card {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.order-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.order-detail-header h2 {
+  margin: 0;
+}
+
+.order-detail-id {
+  margin-top: 0.25rem;
+  color: #768091;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+.order-detail-stats {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.order-detail-stats > div {
+  border-radius: 11px;
+  border: 1px solid #e8ebf1;
+  background: #f8f9fc;
+  padding: 0.62rem;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.order-detail-stats small {
+  color: #737c8a;
+}
+
+.order-detail-stats p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.order-items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.order-item-list {
+  display: grid;
+  gap: 0.68rem;
+}
+
+.order-line-card {
+  border: 1px solid #eaedf2;
+  border-radius: 12px;
+  background: #fbfcfe;
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: 112px minmax(0, 1fr);
+}
+
+.order-line-image {
+  height: 112px;
+  border-radius: 10px;
+  border: 1px solid #e8ecf2;
+  background: linear-gradient(145deg, #f8faff, #eef2fa);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: #5670a6;
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 0.4rem;
+}
+
+.order-line-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.order-line-content {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.order-line-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.order-line-top h4 {
+  margin: 0;
+  font-size: 0.99rem;
+}
+
+.order-line-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: #5e6774;
+  font-size: 0.88rem;
+}
+
+.order-line-link {
+  font-size: 0.9rem;
+  color: #3165c4;
+  font-weight: 600;
+}
+
+.order-detail-side-card {
+  align-self: start;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.order-detail-side-card p {
+  color: #4f5661;
+  line-height: 1.5;
+}
+
+.order-detail-side-actions {
+  margin-top: 0.55rem;
+}
+
+/* ============================================================
+   Profile & password pages
+   ============================================================ */
+
+.profile-page,
+.password-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-headline {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.profile-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-card {
+  border-radius: 12px;
+  border: 1px solid #e8ebf1;
+  background: #f8f9fc;
+  padding: 0.78rem;
+  display: grid;
+  gap: 0.26rem;
+}
+
+.profile-card small {
+  color: #727b88;
+}
+
+.profile-card p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.profile-role {
+  text-transform: capitalize;
+  color: #2f65c2;
+}
+
+.profile-id {
+  font-size: 0.87rem;
+  word-break: break-all;
+}
+
+.profile-actions-row {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.password-form {
+  max-width: 560px;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.password-form label {
+  display: grid;
+  gap: 0.3rem;
+  color: #3b414b;
+  font-size: 0.92rem;
+}
+
+.password-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   Responsive – Orders, order detail, profile
+   ============================================================ */
+
+@media (max-width: 1080px) {
+  .order-detail-page {
+    grid-template-columns: 1fr;
+  }
+
+  .order-detail-side-card {
+    order: 2;
+  }
+}
+
+@media (max-width: 860px) {
+  .orders-overview-grid,
+  .orders-metrics-grid,
+  .order-detail-stats,
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .order-line-card {
+    grid-template-columns: 1fr;
+  }
+
+  .order-line-image {
+    height: 180px;
+  }
+}
+
+@media (max-width: 760px) {
+  .account-trigger-label {
+    display: none;
+  }
+
+  .orders-item-actions {
+    justify-content: flex-start;
+  }
+}

@@ -7,6 +7,7 @@ import {
   type FormEvent,
 } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import { cartApi, productCategoriesApi, productsApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import { useAuth } from "../context/AuthContext";
@@ -53,7 +54,6 @@ export function ProductsPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -245,15 +245,12 @@ export function ProductsPage() {
     query.subCategory || query.masterCategory || "Tất cả sản phẩm";
 
   const addFirstVariantToCart = async (product: Product) => {
-    setNotice(null);
-    setError(null);
-
     const availableVariant = product.variants.find(
       (variant) => variant.status && variant.stockQuantity > 0,
     );
 
     if (!availableVariant) {
-      setNotice("Sản phẩm này đang hết variant khả dụng.");
+      toast.warning("Sản phẩm này đang hết hàng.");
       return;
     }
 
@@ -267,10 +264,9 @@ export function ProductsPage() {
         productId: product.id,
         eventType: "CART",
       });
-      setNotice(`Đã thêm ${product.name} vào giỏ hàng.`);
+      toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
     } catch (rawError) {
-      const apiError = parseApiError(rawError);
-      setError(apiError.message);
+      toast.error(parseApiError(rawError).message);
     }
   };
 
@@ -448,38 +444,19 @@ export function ProductsPage() {
           <label className="compact-field">
             <span>Sắp xếp theo</span>
             <select
-              value={query.sortBy ?? "createdAt"}
-              onChange={(event) =>
-                setQuery((prev) => ({
-                  ...prev,
-                  page: 0,
-                  sortBy: event.target.value as ProductListQuery["sortBy"],
-                }))
-              }
+              value={`${query.sortBy ?? "createdAt"}_${query.sortDir ?? "desc"}`}
+              onChange={(event) => {
+                const [sortBy, sortDir] = event.target.value.split("_") as [
+                  ProductListQuery["sortBy"],
+                  "asc" | "desc"
+                ];
+                setQuery((prev) => ({ ...prev, page: 0, sortBy, sortDir }));
+              }}
             >
-              <option value="updatedAt">updatedAt</option>
-              <option value="createdAt">createdAt</option>
-              <option value="name">name</option>
-              <option value="salePrice">salePrice</option>
-              <option value="originalPrice">originalPrice</option>
-              <option value="totalStock">totalStock</option>
-            </select>
-          </label>
-
-          <label className="compact-field">
-            <span>Thứ tự</span>
-            <select
-              value={query.sortDir ?? "desc"}
-              onChange={(event) =>
-                setQuery((prev) => ({
-                  ...prev,
-                  page: 0,
-                  sortDir: event.target.value as "asc" | "desc",
-                }))
-              }
-            >
-              <option value="asc">asc</option>
-              <option value="desc">desc</option>
+              <option value="createdAt_desc">Mới nhất</option>
+              <option value="name_asc">Tên (A → Z)</option>
+              <option value="salePrice_asc">Giá tăng dần</option>
+              <option value="salePrice_desc">Giá giảm dần</option>
             </select>
           </label>
 
@@ -488,7 +465,6 @@ export function ProductsPage() {
           </button>
         </form>
 
-        {notice && <p className="alert success">{notice}</p>}
         {error && <p className="alert error">{error}</p>}
 
         {isLoading ? (
