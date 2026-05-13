@@ -51,10 +51,12 @@ public class OrderMapper {
         BigDecimal unitPrice = variant.getSalePrice();
         BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
 
+
         return OrderItem.builder()
                 .order(order)
                 .variant(variant)
                 .productName(variant.getProduct().getName())
+                .imageUrl(variant.getProduct().getImageUrl())
                 .sku(variant.getSku())
                 .size(variant.getSize())
                 .color(variant.getColor())
@@ -70,6 +72,7 @@ public class OrderMapper {
                 .variantId(orderItem.getVariant().getId())
                 .productId(orderItem.getVariant().getProduct().getId())
                 .productName(orderItem.getProductName())
+                .imageUrl(orderItem.getImageUrl())
                 .sku(orderItem.getSku())
                 .size(orderItem.getSize())
                 .color(orderItem.getColor())
@@ -78,6 +81,7 @@ public class OrderMapper {
                 .lineTotal(orderItem.getLineTotal())
                 .build();
     }
+
 
     private DeliveryInfoResponse toDeliveryInfoResponse(DeliveryInfo deliveryInfo) {
         return DeliveryInfoResponse.builder()

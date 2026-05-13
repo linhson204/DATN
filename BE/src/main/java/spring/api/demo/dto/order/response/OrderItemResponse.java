@@ -21,6 +21,7 @@ public class OrderItemResponse {
     UUID variantId;
     UUID productId;
     String productName;
+    String imageUrl;
     String sku;
     String size;
     String color;

@@ -4,6 +4,7 @@ CREATE TABLE order_items (
     variant_id CHAR(36) NOT NULL,
     product_id CHAR(36) NULL COMMENT 'FK trực tiếp tới product — dùng cho AI recommendation',
     product_name VARCHAR(255) NOT NULL,
+    image_url VARCHAR(255),
     sku VARCHAR(64),
     size VARCHAR(30),
     color VARCHAR(50),

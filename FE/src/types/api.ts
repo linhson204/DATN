@@ -166,6 +166,7 @@ export type OrderItem = {
   variantId: string;
   productId: string;
   productName: string;
+  imageUrl: string | null;
   sku: string;
   size: string;
   color: string;

@@ -51,6 +51,9 @@ public class OrderItem {
     @Column(name = "product_name", nullable = false, length = 255)
     String productName;
 
+    @Column(name = "image_url", length = 255)
+    String imageUrl;
+
     @Column(name = "sku", length = 64)
     String sku;
 
