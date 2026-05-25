@@ -18,6 +18,7 @@ import lombok.experimental.FieldDefaults;
 public class OrderCreateRequest {
 
     String status;
+    String paymentMethod;
 
     @NotNull(message = "Phi van chuyen khong duoc de trong")
     @PositiveOrZero(message = "Phi van chuyen phai lon hon hoac bang 0")

@@ -663,6 +663,43 @@
   font-size: 1rem;
 }
 
+/* ── Status group (order + payment badges side by side) ── */
+.op-status-group,
+.order-detail-status-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── Payment status badge ── */
+.payment-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+}
+
+/* PAID */
+.payment-status-paid {
+  background: #edfaf3;
+  color: #1a7a4a;
+  border-color: #b8eacf;
+}
+
+/* PENDING / UNPAID */
+.payment-status-pending,
+.payment-status-unpaid {
+  background: #fff8ec;
+  color: #a05e00;
+  border-color: #f5d899;
+}
+
 
 /* ============================================================
    Profile & password pages

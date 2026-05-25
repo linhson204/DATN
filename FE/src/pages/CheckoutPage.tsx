@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { cartApi, ordersApi, shippingApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
-import type { Cart, DeliveryInfo, GoongLocationSuggestion, Order } from "../types/api";
+import type { Cart, DeliveryInfo, GoongLocationSuggestion, Order, PaymentMethod } from "../types/api";
 import { formatCurrency } from "../utils/format";
 import { recordProductInteractionsBatch } from "../utils/productInteractions";
 import { useAuth } from "../context/AuthContext";
@@ -23,6 +23,7 @@ export function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
 
   // ── Address autocomplete ──
   const [suggestions, setSuggestions] = useState<GoongLocationSuggestion[]>([]);
@@ -128,6 +129,7 @@ export function CheckoutPage() {
       const response = await ordersApi.create({
         status: "PENDING",
         shippingFee: shipping?.shippingFee ?? 0,
+        paymentMethod,
         deliveryInfo,
       });
 
@@ -144,6 +146,13 @@ export function CheckoutPage() {
           interactedAt: orderCreatedAt,
         })),
       );
+
+      // Nếu có paymentUrl (ZaloPay / MoMo) → redirect ngay
+      if (response.paymentUrl) {
+        toast.success("Đang chuyển hướng đến trang thanh toán...");
+        window.location.href = response.paymentUrl;
+        return;
+      }
 
       toast.success("Đặt hàng thành công! 🎉");
       const orderLike = response as Partial<Order>;
@@ -346,13 +355,102 @@ export function CheckoutPage() {
               </div>
             </div>
 
+            {/* ── Payment method selector ── */}
+            <div className="checkout-payment-section">
+              <p className="checkout-section-title" style={{ marginTop: "1.5rem" }}>
+                Phương thức thanh toán
+              </p>
+              <div className="checkout-payment-options">
+                <label
+                  className={`checkout-payment-card ${
+                    paymentMethod === "COD" ? "active" : ""
+                  }`}
+                  htmlFor="pm-cod"
+                >
+                  <input
+                    id="pm-cod"
+                    type="radio"
+                    name="paymentMethod"
+                    value="COD"
+                    checked={paymentMethod === "COD"}
+                    onChange={() => setPaymentMethod("COD")}
+                  />
+                  <span className="pm-icon pm-icon-cod">💵</span>
+                  <div className="pm-details">
+                    <span className="pm-name">Tiền mặt (COD)</span>
+                    <span className="pm-desc">Thanh toán khi nhận hàng</span>
+                  </div>
+                  <span className="pm-check">✓</span>
+                </label>
+
+                <label
+                  className={`checkout-payment-card ${
+                    paymentMethod === "ZALOPAY" ? "active" : ""
+                  }`}
+                  htmlFor="pm-zalopay"
+                >
+                  <input
+                    id="pm-zalopay"
+                    type="radio"
+                    name="paymentMethod"
+                    value="ZALOPAY"
+                    checked={paymentMethod === "ZALOPAY"}
+                    onChange={() => setPaymentMethod("ZALOPAY")}
+                  />
+                  <span className="pm-icon pm-icon-zalopay">🔵</span>
+                  <div className="pm-details">
+                    <span className="pm-name">ZaloPay</span>
+                    <span className="pm-desc">Ví điện tử ZaloPay</span>
+                  </div>
+                  <span className="pm-check">✓</span>
+                </label>
+
+                <label
+                  className={`checkout-payment-card ${
+                    paymentMethod === "MOMO" ? "active" : ""
+                  }`}
+                  htmlFor="pm-momo"
+                >
+                  <input
+                    id="pm-momo"
+                    type="radio"
+                    name="paymentMethod"
+                    value="MOMO"
+                    checked={paymentMethod === "MOMO"}
+                    onChange={() => setPaymentMethod("MOMO")}
+                  />
+                  <span className="pm-icon pm-icon-momo">🩷</span>
+                  <div className="pm-details">
+                    <span className="pm-name">MoMo</span>
+                    <span className="pm-desc">Ví điện tử MoMo</span>
+                  </div>
+                  <span className="pm-check">✓</span>
+                </label>
+              </div>
+
+              {paymentMethod !== "COD" && (
+                <div className="checkout-payment-notice">
+                  <span>🔒</span>
+                  <span>
+                    Bạn sẽ được chuyển đến trang thanh toán{" "}
+                    <strong>{paymentMethod === "ZALOPAY" ? "ZaloPay" : "MoMo"}</strong>{" "}
+                    sau khi xác nhận đơn hàng.
+                  </span>
+                </div>
+              )}
+            </div>
+
             <div className="checkout-form-actions">
               <button
                 className="checkout-btn-order"
                 type="submit"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Đang đặt hàng..." : "Đặt hàng →"}
+                {isSubmitting
+                  ? "Đang xử lý..."
+                  : paymentMethod === "COD"
+                  ? "Đặt hàng →"
+                  : `Thanh toán qua ${paymentMethod === "ZALOPAY" ? "ZaloPay" : "MoMo"} →`}
               </button>
             </div>
           </form>

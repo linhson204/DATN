@@ -617,7 +617,7 @@ export function ProductDetailPage() {
                         eventType: "WISHLIST",
                       });
                       setIsInWishlist(true);
-                      toast.success("Đã thêm vào yêu thích! ♥");
+                      toast.success("Đã thêm vào yêu thích!");
                     }
                   } catch (rawErr) {
                     toast.error(parseApiError(rawErr).message);
@@ -627,7 +627,7 @@ export function ProductDetailPage() {
                 }}
                 disabled={!isAuthenticated || wishlistLoading}
               >
-                {isInWishlist ? "♥ Đã yêu thích" : "♡ Yêu thích"}
+                {isInWishlist ? "Đã yêu thích" : "Yêu thích"}
               </button>
             </div>
 
@@ -664,7 +664,6 @@ export function ProductDetailPage() {
         <section className="detail-similar-panel">
           <div className="section-headline">
             <h3>Sản phẩm tương tự</h3>
-            <p>Gợi ý từ endpoint /v1/recommendations/candidates/{id}</p>
           </div>
 
           {similarCandidates.length === 0 ? (

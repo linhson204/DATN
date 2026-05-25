@@ -21,6 +21,18 @@ const orderStatusIcon: Record<Order["status"], string> = {
   CANCELLED: "✖",
 };
 
+const paymentStatusLabel: Record<string, string> = {
+  PENDING: "Chưa thanh toán",
+  PAID: "Đã thanh toán",
+  UNPAID: "Chưa thanh toán",
+};
+
+const paymentStatusIcon: Record<string, string> = {
+  PENDING: "💳",
+  PAID: "✔",
+  UNPAID: "💳",
+};
+
 function getOrderCode(orderId: string): string {
   return orderId.slice(0, 8).toUpperCase();
 }
@@ -168,7 +180,7 @@ export function OrderDetailPage() {
         <button
           className="order-detail-back"
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/orders')}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -181,10 +193,18 @@ export function OrderDetailPage() {
             <h2>Đơn hàng #{getOrderCode(order.id)}</h2>
             <p className="order-detail-id">Mã đầy đủ: {order.id}</p>
           </div>
-          <span className={`status status-${order.status.toLowerCase()}`}>
-            {orderStatusIcon[order.status]}&nbsp;
-            {orderStatusLabel[order.status]}
-          </span>
+          <div className="order-detail-status-group">
+            <span className={`status status-${order.status.toLowerCase()}`}>
+              {orderStatusIcon[order.status]}&nbsp;
+              {orderStatusLabel[order.status]}
+            </span>
+            <span
+              className={`payment-status payment-status-${order.paymentStatus?.toLowerCase() ?? "pending"}`}
+            >
+              {paymentStatusIcon[order.paymentStatus] ?? "💳"}&nbsp;
+              {paymentStatusLabel[order.paymentStatus] ?? "Chưa thanh toán"}
+            </span>
+          </div>
         </div>
 
         <div className="order-detail-stats">

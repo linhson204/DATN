@@ -306,7 +306,6 @@
 }
 
 .similar-product-image {
-  height: 170px;
   border-radius: 10px;
   border: 1px solid #e9edf4;
   background: linear-gradient(140deg, #f6f8fc, #edf2fa);

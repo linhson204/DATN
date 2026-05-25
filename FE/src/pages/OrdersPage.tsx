@@ -21,6 +21,18 @@ const orderStatusIcon: Record<Order["status"], string> = {
   CANCELLED: "✖",
 };
 
+const paymentStatusLabel: Record<string, string> = {
+  PENDING: "Chưa thanh toán",
+  PAID: "Đã thanh toán",
+  UNPAID: "Chưa thanh toán",
+};
+
+const paymentStatusIcon: Record<string, string> = {
+  PENDING: "💳",
+  PAID: "✔",
+  UNPAID: "💳",
+};
+
 function getOrderCode(orderId: string): string {
   return orderId.slice(0, 8).toUpperCase();
 }
@@ -224,12 +236,20 @@ export function OrdersPage() {
                         {formatDateTime(order.createdAt)}
                       </span>
                     </div>
-                    <span
-                      className={`status status-${order.status.toLowerCase()}`}
-                    >
-                      {orderStatusIcon[order.status]}&nbsp;
-                      {orderStatusLabel[order.status]}
-                    </span>
+                    <div className="op-status-group">
+                      <span
+                        className={`status status-${order.status.toLowerCase()}`}
+                      >
+                        {orderStatusIcon[order.status]}&nbsp;
+                        {orderStatusLabel[order.status]}
+                      </span>
+                      <span
+                        className={`payment-status payment-status-${order.paymentStatus?.toLowerCase() ?? "pending"}`}
+                      >
+                        {paymentStatusIcon[order.paymentStatus] ?? "💳"}&nbsp;
+                        {paymentStatusLabel[order.paymentStatus] ?? "Chưa thanh toán"}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Thumbnail strip */}

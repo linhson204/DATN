@@ -244,34 +244,79 @@ export function ProductsPage() {
   const selectedCategoryLabel =
     query.subCategory || query.masterCategory || "Tất cả sản phẩm";
 
-  const addFirstVariantToCart = async (product: Product) => {
-    const availableVariant = product.variants.find(
-      (variant) => variant.status && variant.stockQuantity > 0,
-    );
+  // ── Add-to-cart modal state ──────────────────────────────────────
+  const [cartModal, setCartModal] = useState<{
+    product: Product;
+    selectedColor: string;
+    selectedSize: string;
+    quantity: number;
+    isAdding: boolean;
+  } | null>(null);
 
-    if (!availableVariant) {
+  const openCartModal = (product: Product) => {
+    const availableVariants = product.variants.filter(
+      (v) => v.status && v.stockQuantity > 0,
+    );
+    if (availableVariants.length === 0) {
       toast.warning("Sản phẩm này đang hết hàng.");
       return;
     }
 
+    // Nếu chỉ có 1 màu → tự động chọn
+    const colors = [...new Set(availableVariants.map((v) => v.color))];
+    const defaultColor = colors[0];
+    const sizesForColor = availableVariants
+      .filter((v) => v.color === defaultColor)
+      .map((v) => v.size);
+    const defaultSize = sizesForColor[0];
+
+    setCartModal({
+      product,
+      selectedColor: defaultColor,
+      selectedSize: defaultSize,
+      quantity: 1,
+      isAdding: false,
+    });
+  };
+
+  const submitCartModal = async () => {
+    if (!cartModal) return;
+    const { product, selectedColor, selectedSize, quantity } = cartModal;
+
+    const variant = product.variants.find(
+      (v) =>
+        v.color === selectedColor &&
+        v.size === selectedSize &&
+        v.status &&
+        v.stockQuantity > 0,
+    );
+
+    if (!variant) {
+      toast.warning("Vui lòng chọn kích cỡ khả dụng.");
+      return;
+    }
+
+    setCartModal((prev) => prev && { ...prev, isAdding: true });
+
     try {
-      await cartApi.add({
-        variantId: availableVariant.id,
-        quantity: 1,
-      });
+      await cartApi.add({ variantId: variant.id, quantity });
       recordProductInteraction({
         userId: user?.id,
         productId: product.id,
         eventType: "CART",
       });
       toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
+      setCartModal(null);
     } catch (rawError) {
       toast.error(parseApiError(rawError).message);
+      setCartModal((prev) => prev && { ...prev, isAdding: false });
     }
   };
 
+
   return (
-    <section className="products-page reveal-up">
+    <>
+      <section className="products-page reveal-up">
       <aside className="surface-card products-filter-panel">
         <div className="products-filter-head">
           <h2>Bộ lọc sản phẩm</h2>
@@ -514,7 +559,7 @@ export function ProductsPage() {
                     <button
                       className="btn btn-primary"
                       type="button"
-                      onClick={() => addFirstVariantToCart(product)}
+                      onClick={() => openCartModal(product)}
                     >
                       Thêm vào giỏ
                     </button>
@@ -558,5 +603,175 @@ export function ProductsPage() {
         </footer>
       </article>
     </section>
+
+    {/* ── Add-to-cart modal ── */}
+    {cartModal && (() => {
+      const { product, selectedColor, selectedSize, quantity, isAdding } = cartModal;
+      const availableVariants = product.variants.filter(
+        (v) => v.status && v.stockQuantity > 0,
+      );
+      const colors = [...new Set(availableVariants.map((v) => v.color))];
+      const sizesForColor = availableVariants
+        .filter((v) => v.color === selectedColor)
+        .map((v) => v.size);
+      const selectedVariant = availableVariants.find(
+        (v) => v.color === selectedColor && v.size === selectedSize,
+      );
+      const maxQty = selectedVariant?.stockQuantity ?? 1;
+
+      return (
+        <div
+          className="atc-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => e.target === e.currentTarget && setCartModal(null)}
+        >
+          <div className="atc-modal">
+            {/* Header */}
+            <div className="atc-modal-header">
+              <div className="atc-modal-title-block">
+                {product.imageUrl && (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="atc-modal-img"
+                  />
+                )}
+                <div>
+                  <h3 className="atc-modal-title">{product.name}</h3>
+                  <p className="atc-modal-brand">{product.brand}</p>
+                  <p className="atc-modal-price price">{formatCurrency(product.salePrice)}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="atc-modal-close"
+                onClick={() => setCartModal(null)}
+                aria-label="Đóng"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="atc-modal-body">
+              {/* Màu – chỉ hiển thị nếu có nhiều màu */}
+              {colors.length > 1 && (
+                <div className="atc-section">
+                  <p className="atc-section-label">Màu sắc</p>
+                  <div className="atc-chip-row">
+                    {colors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`atc-chip ${
+                          selectedColor === color ? "active" : ""
+                        }`}
+                        onClick={() =>
+                          setCartModal((prev) =>
+                            prev && {
+                              ...prev,
+                              selectedColor: color,
+                              selectedSize: availableVariants.find(
+                                (v) => v.color === color,
+                              )?.size ?? "",
+                            },
+                          )
+                        }
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Kích cỡ */}
+              <div className="atc-section">
+                <p className="atc-section-label">Kích cỡ</p>
+                <div className="atc-chip-row">
+                  {sizesForColor.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      className={`atc-chip ${
+                        selectedSize === size ? "active" : ""
+                      }`}
+                      onClick={() =>
+                        setCartModal((prev) =>
+                          prev && { ...prev, selectedSize: size },
+                        )
+                      }
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Số lượng */}
+              <div className="atc-section">
+                <p className="atc-section-label">Số lượng</p>
+                <div className="atc-qty-row">
+                  <button
+                    type="button"
+                    className="atc-qty-btn"
+                    onClick={() =>
+                      setCartModal((prev) =>
+                        prev && { ...prev, quantity: Math.max(1, quantity - 1) },
+                      )
+                    }
+                    disabled={quantity <= 1}
+                  >
+                    −
+                  </button>
+                  <span className="atc-qty-value">{quantity}</span>
+                  <button
+                    type="button"
+                    className="atc-qty-btn"
+                    onClick={() =>
+                      setCartModal((prev) =>
+                        prev && {
+                          ...prev,
+                          quantity: Math.min(maxQty, quantity + 1),
+                        },
+                      )
+                    }
+                    disabled={quantity >= maxQty}
+                  >
+                    +
+                  </button>
+                  {selectedVariant && (
+                    <span className="atc-stock-hint">
+                      Còn {selectedVariant.stockQuantity} sản phẩm
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="atc-modal-footer">
+              <button
+                type="button"
+                className="btn btn-muted"
+                onClick={() => setCartModal(null)}
+                disabled={isAdding}
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary atc-confirm-btn"
+                onClick={submitCartModal}
+                disabled={isAdding || !selectedSize}
+              >
+                {isAdding ? "Đang thêm..." : "Thêm vào giỏ hàng"}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    })()}
+    </>
   );
 }

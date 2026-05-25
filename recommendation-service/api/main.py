@@ -102,7 +102,7 @@ def score_candidates(
 @app.get("/recommend/{user_id}", response_model=RecommendResponse)
 def recommend_for_user(
     user_id: str,
-    top_n: int = Query(20, ge=1, le=100),
+    top_n: int = Query(30, ge=1, le=100),
     gender: str | None = Query(None, description="User gender hint for cold-start fallback (MALE/FEMALE/UNISEX)"),
     age: int | None = Query(None, ge=0, le=120, description="User age hint for cold-start fallback"),
     recommender: LightFMRecommender = Depends(get_recommender),

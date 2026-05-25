@@ -68,9 +68,6 @@ export function WishlistPage() {
         <div className="wishlist-header">
           <div className="wishlist-header-left">
             <h1>
-              <span className="wishlist-heart-icon" aria-hidden="true">
-                ♥
-              </span>
               Danh sách yêu thích
             </h1>
             <p className="wishlist-count">

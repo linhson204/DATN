@@ -71,6 +71,12 @@ public class SecurityConfig {
                         //============ SHIPPING FEE ENDPOINTS (PUBLIC) ==========
                         .requestMatchers("/v1/shipping-fee/**").permitAll()
 
+                        //============ ZALOPAY CALLBACK ENDPOINT ==========
+                        .requestMatchers("/v1/payments/zalopay/callback").permitAll()
+
+                        //============ MOMO CALLBACK ENDPOINT ==========
+                        .requestMatchers("/v1/payments/momo/callback").permitAll()
+
                         // ========== VIEW LOG ENDPOINTS ==========
                         .requestMatchers(HttpMethod.POST, "/v1/products/{id}/view").permitAll()
 

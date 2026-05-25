@@ -216,7 +216,7 @@ def evaluate_lightfm(
     model: LightFMRecommender,
     test_df: pd.DataFrame,
     train_df: Optional[pd.DataFrame] = None,
-    top_n: int = 20,
+    top_n: int = 30,
     k_precision: int = 10,
     k_recall: int = 20,
     k_ndcg: int = 10,

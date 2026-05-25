@@ -104,7 +104,7 @@ export function AuthPage() {
 
   const redirectPath = useMemo(() => {
     const state = location.state as { from?: { pathname?: string } } | null;
-    return state?.from?.pathname || "/products";
+    return state?.from?.pathname || "/";
   }, [location.state]);
 
   const handleGoogleLogin = () => {
@@ -442,7 +442,7 @@ export function AuthPage() {
 
           {forgotPasswordStep === "reset" && (
             <>
-              <h2 className="auth-card-title">Tạo mật khẩu mới 🔑</h2>
+              <h2 className="auth-card-title">Tạo mật khẩu mới</h2>
               <p className="auth-card-subtitle">Vui lòng tạo mật khẩu mới an toàn</p>
               {notice && <div className="auth-alert success">{notice}</div>}
               {error && <div className="auth-alert error">{error}</div>}
@@ -492,12 +492,12 @@ export function AuthPage() {
           {/* Title */}
           {tab === "login" ? (
             <>
-              <h2 className="auth-card-title">Chào mừng trở lại 👋</h2>
+              <h2 className="auth-card-title">Chào mừng trở lại</h2>
               <p className="auth-card-subtitle">Đăng nhập để tiếp tục mua sắm</p>
             </>
           ) : (
             <>
-              <h2 className="auth-card-title">Tạo tài khoản mới ✨</h2>
+              <h2 className="auth-card-title">Tạo tài khoản mới</h2>
               <p className="auth-card-subtitle">Điền thông tin để bắt đầu mua sắm</p>
             </>
           )}

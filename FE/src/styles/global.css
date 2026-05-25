@@ -561,33 +561,33 @@ textarea {
 }
 
 .status-pending {
-  background: rgba(255, 183, 74, 0.2);
-  color: #ffd996;
-  border: 1px solid rgba(255, 183, 74, 0.34);
+  background: rgba(255, 183, 74, 0.18);
+  color: #7a4800;
+  border: 1px solid rgba(255, 183, 74, 0.5);
 }
 
 .status-confirmed {
-  background: rgba(83, 194, 255, 0.2);
-  color: #b2e5ff;
-  border: 1px solid rgba(83, 194, 255, 0.36);
+  background: rgba(83, 194, 255, 0.18);
+  color: #005d8f;
+  border: 1px solid rgba(83, 194, 255, 0.45);
 }
 
 .status-shipping {
-  background: rgba(153, 132, 255, 0.2);
-  color: #d4c8ff;
-  border: 1px solid rgba(153, 132, 255, 0.36);
+  background: rgba(153, 132, 255, 0.18);
+  color: #3d2fa0;
+  border: 1px solid rgba(153, 132, 255, 0.45);
 }
 
 .status-delivered {
-  background: rgba(34, 195, 138, 0.2);
-  color: #9af3cc;
-  border: 1px solid rgba(34, 195, 138, 0.35);
+  background: rgba(34, 195, 138, 0.18);
+  color: #0d6e43;
+  border: 1px solid rgba(34, 195, 138, 0.45);
 }
 
 .status-cancelled {
-  background: rgba(255, 95, 109, 0.2);
-  color: #ffc8ce;
-  border: 1px solid rgba(255, 95, 109, 0.38);
+  background: rgba(255, 95, 109, 0.18);
+  color: #a01426;
+  border: 1px solid rgba(255, 95, 109, 0.45);
 }
 
 /* ============================================================

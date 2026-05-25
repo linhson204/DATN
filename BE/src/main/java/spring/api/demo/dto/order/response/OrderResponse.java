@@ -22,6 +22,11 @@ public class OrderResponse {
     UUID id;
     UUID userId;
     String status;
+    String paymentMethod;
+    String paymentStatus;
+    String paymentAppTransId;
+    String paymentTransactionId;
+    String paymentUrl;
     BigDecimal shippingFee;
     BigDecimal totalAmount;
     LocalDateTime createdAt;

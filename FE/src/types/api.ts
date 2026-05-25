@@ -182,12 +182,22 @@ export type OrderStatus =
   | "DELIVERED"
   | "CANCELLED";
 
+export type PaymentOrderStatus =
+  | "PENDING"
+  | "PAID"
+  | "UNPAID"
+
+export type PaymentMethod = "COD" | "ZALOPAY" | "MOMO";
+
 export type Order = {
   id: string;
   userId: string;
   status: OrderStatus;
   shippingFee: number;
   totalAmount: number;
+  paymentMethod: PaymentMethod;
+  paymentStatus: string;
+  paymentUrl?: string | null;
   createdAt: string;
   deliveryInfo: DeliveryInfo;
   items: OrderItem[];
@@ -196,6 +206,7 @@ export type Order = {
 export type CreateOrderPayload = {
   status: OrderStatus;
   shippingFee: number;
+  paymentMethod?: PaymentMethod;
   deliveryInfo: DeliveryInfo;
 };
 

@@ -53,6 +53,11 @@ public enum ErrorCode {
     // Validation
     VALIDATION_FAILED(HttpStatus.UNPROCESSABLE_ENTITY, "Dữ liệu không hợp lệ"),
 
+    // Payment
+    INVALID_PAYMENT_METHOD(HttpStatus.UNPROCESSABLE_ENTITY, "Phương thức thanh toán không hợp lệ"),
+    PAYMENT_GATEWAY_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "Cổng thanh toán chưa được cấu hình"),
+    PAYMENT_GATEWAY_ERROR(HttpStatus.BAD_GATEWAY, "Không thể kết nối cổng thanh toán"),
+
     // External API
     GOONG_API_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "Không thể kết nối đến dịch vụ bản đồ Goong"),
     SHIPPING_FEE_CALCULATION_ERROR(HttpStatus.UNPROCESSABLE_ENTITY, "Không thể tính phí vận chuyển"),

@@ -7,6 +7,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import spring.api.demo.dto.common.PageResponse;
+import spring.api.demo.dto.payment.response.MoMoCreatePaymentResult;
+import spring.api.demo.dto.payment.response.ZaloPayCreatePaymentResult;
 import spring.api.demo.entity.CartItem;
 import spring.api.demo.dto.order.request.OrderCreateRequest;
 import spring.api.demo.dto.order.request.OrderStatusUpdateRequest;
@@ -41,6 +43,11 @@ public class OrderService {
             "DELIVERED",
             "CANCELLED"
     );
+    private static final Set<String> VALID_PAYMENT_METHOD = Set.of(
+            "COD",
+            "ZALOPAY",
+            "MOMO"
+    );
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -49,6 +56,8 @@ public class OrderService {
     private final DeliveryInfoRepository deliveryInfoRepository;
     private final UserRepository userRepository;
     private final OrderMapper orderMapper;
+    private final ZaloPayService zaloPayService;
+    private final MoMoService moMoService;
 
     public OrderService(
             OrderRepository orderRepository,
@@ -57,7 +66,9 @@ public class OrderService {
             ProductVariantRepository productVariantRepository,
             DeliveryInfoRepository deliveryInfoRepository,
             UserRepository userRepository,
-            OrderMapper orderMapper
+            OrderMapper orderMapper,
+            ZaloPayService zaloPayService,
+            MoMoService moMoService
     ) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
@@ -66,6 +77,8 @@ public class OrderService {
         this.deliveryInfoRepository = deliveryInfoRepository;
         this.userRepository = userRepository;
         this.orderMapper = orderMapper;
+        this.zaloPayService = zaloPayService;
+        this.moMoService = moMoService;
     }
 
     @Transactional
@@ -88,6 +101,7 @@ public class OrderService {
         BigDecimal shippingFee = BigDecimal.valueOf(request.getShippingFee());
         BigDecimal subtotalAmount = calculateSubtotal(cartItems);
         BigDecimal totalAmount = subtotalAmount.add(shippingFee);
+        String paymentMethod = resolvePaymentMethod(request.getPaymentMethod());
 
         DeliveryInfo deliveryInfo = deliveryInfoRepository.save(
             orderMapper.toDeliveryInfo(request.getDeliveryInfo())
@@ -99,6 +113,8 @@ public class OrderService {
                 .status(resolveStatus(request.getStatus()))
                 .shippingFee(shippingFee)
                 .totalAmount(totalAmount)
+                .paymentMethod(paymentMethod)
+                .paymentStatus(resolveInitialPaymentStatus(paymentMethod))
                 .build();
 
         Order savedOrder = orderRepository.save(order);
@@ -109,10 +125,26 @@ public class OrderService {
         orderItemRepository.saveAll(orderItems);
 
         savedOrder.setOrderItems(orderItems);
+
+        String paymentUrl = null;
+        if ("ZALOPAY".equals(savedOrder.getPaymentMethod())) {
+            ZaloPayCreatePaymentResult paymentResult = zaloPayService.createPayment(savedOrder, user.getEmail());
+            savedOrder.setPaymentAppTransId(paymentResult.getAppTransId());
+            savedOrder.setPaymentStatus("PENDING");
+            paymentUrl = paymentResult.getOrderUrl();
+        } else if ("MOMO".equals(savedOrder.getPaymentMethod())) {
+            MoMoCreatePaymentResult paymentResult = moMoService.createPayment(savedOrder, user.getEmail());
+            savedOrder.setPaymentAppTransId(paymentResult.getRequestId());
+            savedOrder.setPaymentStatus("PENDING");
+            paymentUrl = paymentResult.getPayUrl();
+        }
+
         updateStockAfterCheckout(cartItems);
         cartItemRepository.deleteByUserAndIsSelectedTrue(user);
 
-        return orderMapper.toOrderResponse(savedOrder);
+        OrderResponse response = orderMapper.toOrderResponse(savedOrder);
+        response.setPaymentUrl(paymentUrl);
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -181,6 +213,26 @@ public class OrderService {
         if (shippingFee == null || shippingFee < 0f) {
             throw new AppException(ErrorCode.INVALID_ORDER_AMOUNT);
         }
+    }
+
+    private String resolvePaymentMethod(String rawPaymentMethod) {
+        if (rawPaymentMethod == null || rawPaymentMethod.isBlank()) {
+            return "COD";
+        }
+
+        String normalizedPaymentMethod = rawPaymentMethod.trim().toUpperCase();
+        if (!VALID_PAYMENT_METHOD.contains(normalizedPaymentMethod)) {
+            throw new AppException(ErrorCode.INVALID_PAYMENT_METHOD);
+        }
+
+        return normalizedPaymentMethod;
+    }
+
+    private String resolveInitialPaymentStatus(String paymentMethod) {
+        if ("ZALOPAY".equals(paymentMethod) || "MOMO".equals(paymentMethod)) {
+            return "PENDING";
+        }
+        return "UNPAID";
     }
 
     private BigDecimal calculateSubtotal(List<CartItem> cartItems) {

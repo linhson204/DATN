@@ -29,4 +29,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     @EntityGraph(attributePaths = {"user", "deliveryInfo", "orderItems", "orderItems.variant", "orderItems.variant.product"})
     Optional<Order> findByIdAndUser(UUID id, User user);
+
+    Optional<Order> findByPaymentAppTransId(String paymentAppTransId);
 }

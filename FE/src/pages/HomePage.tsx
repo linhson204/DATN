@@ -8,7 +8,7 @@ import { formatCurrency } from "../utils/format";
 import { useInterestedProducts } from "../hooks/useInterestedProducts";
 import { useTodayBrowsedProducts } from "../hooks/useTodayBrowsedProducts";
 
-const HOME_PRODUCT_LIMIT = 20;
+const HOME_PRODUCT_LIMIT = 30;
 
 function uniqueById(products: Product[]): Product[] {
   const map = new Map<string, Product>();
@@ -100,27 +100,9 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="home-promos">
-        <article className="promo-card promo-blue">
-          <h3>Giảm 50% cho đơn hàng đầu tiên</h3>
-          <p>Sử dụng mã WELCOME50 để nhận ưu đãi.</p>
-        </article>
-        <article className="promo-card promo-pink">
-          <h3>Flash Sale mỗi thứ sáu</h3>
-          <p>Giảm tới 70% cho sản phẩm chọn lọc.</p>
-        </article>
-        <article className="promo-card promo-green">
-          <h3>Miễn phí vận chuyển</h3>
-          <p>Cho đơn hàng từ 500.000 VND trên toàn quốc.</p>
-        </article>
-      </section>
-
       <section id="featured-products" className="surface-card featured-shell">
         <div className="featured-top">
           <div className="featured-title-wrap">
-            <span className="featured-icon" aria-hidden="true">
-              🔥
-            </span>
             <h2>Sản phẩm gợi ý ngày hôm nay</h2>
           </div>
 
@@ -181,9 +163,6 @@ export function HomePage() {
         <section className="surface-card featured-shell interested-products-shell">
           <div className="featured-top">
             <div className="featured-title-wrap">
-              <span className="featured-icon" aria-hidden="true">
-                ✨
-              </span>
               <h2>Sản phẩm bạn đang quan tâm</h2>
             </div>
 
@@ -270,9 +249,6 @@ export function HomePage() {
         <section className="surface-card featured-shell today-browsed-shell">
           <div className="featured-top">
             <div className="featured-title-wrap">
-              <span className="featured-icon" aria-hidden="true">
-                🕐
-              </span>
               <h2>Sản phẩm bạn đã xem hôm nay</h2>
             </div>
 

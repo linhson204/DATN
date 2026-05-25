@@ -6,6 +6,7 @@ import type {
   Order,
   OrderStatus,
   PageResponse,
+  PaymentOrderStatus,
 } from "../../types/api";
 
 type RequestOptions = {
@@ -18,6 +19,12 @@ export const orderStatuses: OrderStatus[] = [
   "SHIPPING",
   "DELIVERED",
   "CANCELLED",
+];
+
+export const paymentOrdersStatus: PaymentOrderStatus[] = [
+  "PENDING",
+  "PAID",
+  "UNPAID"
 ];
 
 export const ordersApi = {

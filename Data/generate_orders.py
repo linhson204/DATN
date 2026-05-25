@@ -221,9 +221,11 @@ def main():
     order_items = []
     delivery_infos = []
     
-    statuses = ['COMPLETED', 'DELIVERED', 'PENDING', 'CANCELLED', 'SHIPPING']
-    status_weights = [0.05, 0.70, 0.10, 0.05, 0.10]
+    statuses = ['DELIVERED', 'PENDING', 'CANCELLED']
+    status_weights = [0.6, 0.35, 0.05]
     methods = ['Standard', 'Express', 'Next Day']
+    payment_methods = ['COD', 'MOMO', 'ZALOPAY']
+    payment_method_weights = [0.50, 0.25, 0.20]
     
     now = datetime.now()
     ORDERS_PER_USER = 10
@@ -270,6 +272,22 @@ def main():
                 'created_at': created_at
             })
             
+            payment_method = random.choices(payment_methods, weights=payment_method_weights)[0]
+            if status == 'CANCELLED':
+                payment_status = 'UNPAID'
+            elif payment_method == 'COD':
+                payment_status = 'PAID' if status in ['DELIVERED'] else 'UNPAID'
+            else:
+                payment_status = 'PAID'
+                if status in ['PENDING'] and random.random() < 0.2:
+                    payment_status = 'UNPAID'
+
+            payment_app_trans_id = None
+            payment_transaction_id = None
+            if payment_method != 'COD' and payment_status == 'PAID':
+                payment_app_trans_id = f"APP{created_at.strftime('%Y%m%d')}{random.randint(100000, 999999)}"
+                payment_transaction_id = str(uuid.uuid4())
+
             # --- Items (1-4 products) ---
             n_items = random.randint(1, 4)
             order_total = 0
@@ -310,6 +328,10 @@ def main():
                     'status': status,
                     'shipping_fee': shipping_fee,
                     'total_amount': order_total,
+                    'payment_method': payment_method,
+                    'payment_status': payment_status,
+                    'payment_app_trans_id': payment_app_trans_id,
+                    'payment_transaction_id': payment_transaction_id,
                     'created_at': created_at
                 })
 
@@ -340,11 +362,13 @@ def main():
         # ORDERS
         f.write("-- 2. INSERT ORDERS\n")
         for chunk in chunker(orders, 500):
-            f.write("INSERT INTO orders (id, user_id, delivery_info_id, status, shipping_fee, total_amount, created_at) VALUES\n")
+            f.write("INSERT INTO orders (id, user_id, delivery_info_id, status, shipping_fee, total_amount, payment_method, payment_status, payment_app_trans_id, payment_transaction_id, created_at) VALUES\n")
             vals = []
             for o in chunk:
                 vals.append(f"({escape_sql(o['id'])}, {escape_sql(o['user_id'])}, {escape_sql(o['delivery_info_id'])}, "
-                            f"{escape_sql(o['status'])}, {o['shipping_fee']}, {o['total_amount']}, {escape_sql(o['created_at'].strftime('%Y-%m-%d %H:%M:%S'))})")
+                            f"{escape_sql(o['status'])}, {o['shipping_fee']}, {o['total_amount']}, {escape_sql(o['payment_method'])}, "
+                            f"{escape_sql(o['payment_status'])}, {escape_sql(o['payment_app_trans_id'])}, {escape_sql(o['payment_transaction_id'])}, "
+                            f"{escape_sql(o['created_at'].strftime('%Y-%m-%d %H:%M:%S'))})")
             f.write(",\n".join(vals) + ";\n\n")
             
         # ORDER ITEMS

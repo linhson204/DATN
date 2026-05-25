@@ -72,6 +72,18 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Column(name = "payment_method", nullable = false, length = 30)
+    String paymentMethod;
+
+    @Column(name = "payment_status", nullable = false, length = 30)
+    String paymentStatus;
+
+    @Column(name = "payment_app_trans_id", length = 100)
+    String paymentAppTransId;
+
+    @Column(name = "payment_transaction_id", length = 100)
+    String paymentTransactionId;
+
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
