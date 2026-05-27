@@ -272,32 +272,3 @@ def user_feature_tuples_for_users(
 
     allow_set = {str(value) for value in allowed_user_ids}
     return [entry for entry in tuples if entry[0] in allow_set]
-
-
-def compute_session_coview(
-    engine: Engine,
-    lookback_days: Optional[int] = None,
-    session_minutes: Optional[int] = None,
-) -> pd.DataFrame:
-    """Tính toán số lần xem chung (co-view) giữa các sản phẩm dựa trên lịch sử xem của người dùng."""
-    days = int(lookback_days or settings.coview_lookback_days)
-    minutes = int(session_minutes or settings.coview_session_minutes)
-    cutoff = datetime.now() - timedelta(days=days)
-
-    query = text(
-        """
-        SELECT
-            a.product_id AS seed_product_id,
-            b.product_id AS co_view_product_id,
-            COUNT(*) AS co_view_count
-        FROM product_view_log a
-        JOIN product_view_log b
-          ON a.user_id = b.user_id
-         AND a.product_id <> b.product_id
-         AND ABS(TIMESTAMPDIFF(MINUTE, a.created_at, b.created_at)) <= :minutes
-        WHERE a.created_at >= :cutoff
-          AND b.created_at >= :cutoff
-        GROUP BY a.product_id, b.product_id
-        """
-    )
-    return pd.read_sql(query, engine, params={"cutoff": cutoff, "minutes": minutes})

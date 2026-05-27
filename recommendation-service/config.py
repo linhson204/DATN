@@ -40,13 +40,6 @@ class Settings(BaseSettings):
     model_path: Path = Field(default=BASE_DIR / "models" / "saved" / "lightfm_model.joblib", alias="MODEL_PATH")
     dataset_path: Path = Field(default=BASE_DIR / "models" / "saved" / "dataset.pkl", alias="DATASET_PATH")
     
-    # Đường dẫn lưu trữ mô hình đề xuất sản phẩm dựa trên tương tác giữa
-    #  các sản phẩm (Item-based Collaborative Filtering).
-    similar_items_model_path: Path = Field(
-        default=BASE_DIR / "models" / "saved" / "item_cf.joblib",
-        alias="SIMILAR_ITEMS_MODEL_PATH",
-    )
-
     # Đường dẫn lưu trữ dữ liệu fallback khi không có đủ tương tác để huấn luyện mô hình.
     fallback_data_path: Path = Field(
         default=BASE_DIR / "models" / "saved" / "fallback.json",
@@ -67,15 +60,13 @@ class Settings(BaseSettings):
     wishlist_lookback_days: int = Field(default=180, alias="WISHLIST_LOOKBACK_DAYS")
     include_wishlist_signal: bool = Field(default=False, alias="INCLUDE_WISHLIST_SIGNAL")
 
-    coview_lookback_days: int = Field(default=30, alias="COVIEW_LOOKBACK_DAYS")
-    coview_session_minutes: int = Field(default=30, alias="COVIEW_SESSION_MINUTES")
 
     # Các trọng số được sử dụng để tính toán tín hiệu tương tác từ các hành động 
     # khác nhau của người dùng.
-    quick_view_weight: float = Field(default=1.0, alias="QUICK_VIEW_WEIGHT")
-    detail_view_weight: float = Field(default=2.0, alias="DETAIL_VIEW_WEIGHT")
-    deep_view_weight: float = Field(default=3.0, alias="DEEP_VIEW_WEIGHT")
-    wishlist_weight: float = Field(default=3.0, alias="WISHLIST_WEIGHT")
+    quick_view_weight: float = Field(default=0.25, alias="QUICK_VIEW_WEIGHT")
+    detail_view_weight: float = Field(default=0.5, alias="DETAIL_VIEW_WEIGHT")
+    deep_view_weight: float = Field(default=1.0, alias="DEEP_VIEW_WEIGHT")
+    wishlist_weight: float = Field(default=2.0, alias="WISHLIST_WEIGHT")
     order_weight_scale: float = Field(default=5.0, alias="ORDER_WEIGHT_SCALE")
     max_interaction_weight: float = Field(default=15.0, alias="MAX_INTERACTION_WEIGHT")
 
@@ -86,24 +77,25 @@ class Settings(BaseSettings):
     fallback_top_n: int = Field(default=50, alias="FALLBACK_TOP_N")
 
     '''Tham số liên quan đến việc chia dữ liệu thành tập huấn luyện và tập kiểm tra.'''
-    split_holdout_days: int = Field(default=10, alias="SPLIT_HOLDOUT_DAYS")
+    split_holdout_days: int = Field(default=15, alias="SPLIT_HOLDOUT_DAYS")
 
     '''Các siêu tham số cho mô hình LightFM.'''
     lightfm_no_components: int = Field(default=64, alias="LIGHTFM_NO_COMPONENTS")
     lightfm_loss: str = Field(default="warp", alias="LIGHTFM_LOSS")
     lightfm_learning_rate: float = Field(default=0.05, alias="LIGHTFM_LEARNING_RATE")
-    lightfm_epochs: int = Field(default=30, alias="LIGHTFM_EPOCHS")
+    lightfm_epochs: int = Field(default=50, alias="LIGHTFM_EPOCHS")
     lightfm_num_threads: int = Field(default=4, alias="LIGHTFM_NUM_THREADS")
-    lightfm_item_alpha: float = Field(default=1e-6, alias="LIGHTFM_ITEM_ALPHA")
-    lightfm_user_alpha: float = Field(default=1e-6, alias="LIGHTFM_USER_ALPHA")
+    lightfm_item_alpha: float = Field(default=1e-4, alias="LIGHTFM_ITEM_ALPHA")
+    lightfm_user_alpha: float = Field(default=1e-4, alias="LIGHTFM_USER_ALPHA")
+    lightfm_random_state: int = Field(default=42, alias="LIGHTFM_RANDOM_STATE")
 
     '''Cấu hình tính năng boost theo mùa (Season Boosting) tại inference-time.'''
     enable_season_boost: bool = Field(default=True, alias="ENABLE_SEASON_BOOST")
-    season_boost_weight: float = Field(default=0.3, alias="SEASON_BOOST_WEIGHT")
+    season_boost_weight: float = Field(default=1.0, alias="SEASON_BOOST_WEIGHT")
 
     '''Cấu hình tăng điểm theo mức độ khớp giới tính giữa user và sản phẩm.'''
     enable_gender_match_boost: bool = Field(default=True, alias="ENABLE_GENDER_MATCH_BOOST")
-    gender_match_boost_weight: float = Field(default=0.2, alias="GENDER_MATCH_BOOST_WEIGHT")
+    gender_match_boost_weight: float = Field(default=1.0, alias="GENDER_MATCH_BOOST_WEIGHT")
 
     # Cấu hình CORS cho frontend gọi API từ trình duyệt.
     cors_allow_origins: list[str] = Field(

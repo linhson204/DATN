@@ -38,9 +38,9 @@ type CacheEntry = {
 };
 
 const INTERESTED_CACHE_TTL_MS = 5 * 60 * 1000;
-const MAX_RENDER_PRODUCTS = 50;
+const MAX_RENDER_PRODUCTS = 60;
 const MAX_SEED_PRODUCTS = 10;
-const SIMILAR_TOP_N = 10;
+const SIMILAR_TOP_N = 5;
 const REQUEST_CONCURRENCY = 5;
 
 const INTERACTION_PRIORITY: Record<ProductInteractionEventType, number> = {
@@ -304,24 +304,6 @@ async function resolveProductsByIds(
     .slice(0, MAX_RENDER_PRODUCTS);
 }
 
-async function fallbackToRecommend(
-  userId: string,
-  signal: AbortSignal,
-): Promise<Product[]> {
-  const fallbackResponse = await recommendationApi.recommendFromPython(
-    userId,
-    MAX_RENDER_PRODUCTS,
-    { signal },
-  );
-
-  throwIfAborted(signal);
-
-  if (fallbackResponse.productIds.length === 0) {
-    return [];
-  }
-
-  return resolveProductsByIds(fallbackResponse.productIds, signal);
-}
 
 async function collectTodaySeeds(
   userId: string,
@@ -478,16 +460,18 @@ export function useInterestedProducts(userId?: string) {
 
         const mergedProductIds = mergeSimilarScores(seeds, similarResponses);
 
-        let products = await resolveProductsByIds(
-          mergedProductIds,
+        // Đặt seed products lên đầu, tiếp theo là similar products
+        const seedProductIds = seeds.map((s) => s.productId);
+        const allProductIds = [
+          ...seedProductIds,
+          ...mergedProductIds,
+        ];
+
+        const products = await resolveProductsByIds(
+          allProductIds,
           controller.signal,
         );
-        let source: InterestedSource = "similar";
-
-        if (products.length === 0) {
-          products = await fallbackToRecommend(userId, controller.signal);
-          source = "fallback";
-        }
+        const source: InterestedSource = "similar";
 
         throwIfAborted(controller.signal);
 

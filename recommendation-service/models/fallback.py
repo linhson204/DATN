@@ -223,7 +223,7 @@ class PopularItemsFallback:
         user_id: Optional[str] = None,
         gender: Optional[str] = None,
         age: Optional[int] = None,
-        top_n: int = 20,
+        top_n: int = 30,
     ) -> tuple[list[str], str]:
         """
         Trả về danh sách (product_ids, tên_chiến_lược).

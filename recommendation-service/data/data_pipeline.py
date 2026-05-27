@@ -96,9 +96,9 @@ def extract_order_interactions(engine: Engine, lookback_days: Optional[int] = No
             o.created_at
         FROM orders o
         JOIN order_items oi ON oi.order_id = o.id
-        WHERE oi.product_id IS NOT NULL
-          AND o.status = 'DELIVERED'
-          AND o.created_at >= :cutoff
+                WHERE oi.product_id IS NOT NULL
+                    AND o.status <> 'CANCELLED'
+                    AND o.created_at >= :cutoff
         """
     )
 

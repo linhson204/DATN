@@ -152,7 +152,7 @@ def main():
     view_logs = []
     now = datetime.now()
     
-    VIEWS_PER_USER = 120
+    VIEWS_PER_USER = 240
 
     print("Bắt đầu sinh view logs...")
     for user in users:

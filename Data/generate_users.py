@@ -23,29 +23,34 @@ def main():
     
     # Cấu hình nhóm users theo yêu cầu
     groups = [
-        {"name": "Young female", "count": 40, "gender": "female", "year_range": (2000, 2005)},
-        {"name": "Adult female", "count": 35, "gender": "female", "year_range": (1985, 1999)},
-        {"name": "Young male",   "count": 40, "gender": "male",   "year_range": (2000, 2005)},
-        {"name": "Adult male",   "count": 35, "gender": "male",   "year_range": (1985, 1999)},
+        {"name": "Young female", "count": 133, "gender": "female", "year_range": (2000, 2005)},
+        {"name": "Adult female", "count": 117, "gender": "female", "year_range": (1985, 1999)},
+        {"name": "Young male",   "count": 133, "gender": "male",   "year_range": (2000, 2005)},
+        {"name": "Adult male",   "count": 117, "gender": "male",   "year_range": (1985, 1999)},
     ]
     
     sql_lines = []
     sql_lines.append("-- ============================================================")
-    sql_lines.append("-- TẠO GIẢ LẬP 150 USERS THEO MẪU PHÂN BỐ")
+    sql_lines.append("-- TẠO GIẢ LẬP 500 USERS THEO MẪU PHÂN BỐ")
     sql_lines.append("-- Mật khẩu cho tất cả user mặc định là: Test@123")
     sql_lines.append("-- ============================================================")
     sql_lines.append(" ")
     sql_lines.append("INSERT INTO users (id, username, password_hash, full_name, email, phone_number, address, gender, birth_year, role_id, status, points, balance, total_purchase, membership_level) VALUES")
     
     values_list = []
+    used_usernames = set()
     
     for group in groups:
         sql_lines.append(f"\n-- Nhóm: {group['name']} ({group['count']} users)")
         for _ in range(group['count']):
             user_id = str(uuid.uuid4())
             
-            # Username & Email
-            username = fake.user_name() + str(random.randint(100, 999))
+            # Username & Email (đảm bảo không trùng)
+            while True:
+                username = fake.user_name() + str(random.randint(100, 999))
+                if username not in used_usernames:
+                    used_usernames.add(username)
+                    break
             email = username + "@example.com"
             
             # Name setup theo giới tính
@@ -88,7 +93,7 @@ def main():
     with open('import_users.sql', 'w', encoding='utf-8') as f:
         f.write("\n".join(sql_lines))
         
-    print("Đã tạo file import_users.sql với 150 users!")
+    print("Đã tạo file import_users.sql với 500 users!")
 
 if __name__ == '__main__':
     main()

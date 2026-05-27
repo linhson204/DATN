@@ -80,11 +80,13 @@ function normalizeSimilarResponse(
         ? payload.productId
         : fallbackProductId;
 
-  const similarItemsRaw = Array.isArray(payload.similar_items)
-    ? payload.similar_items
-    : Array.isArray(payload.similarItems)
-      ? payload.similarItems
-      : [];
+  const similarItemsRaw = Array.isArray(payload.similarities)
+    ? payload.similarities
+    : Array.isArray(payload.similar_items)
+      ? payload.similar_items
+      : Array.isArray(payload.similarItems)
+        ? payload.similarItems
+        : [];
 
   const similarItems = similarItemsRaw
     .map((item) => {

@@ -501,9 +501,7 @@ export function ProductDetailPage() {
                     <button
                       key={option.color}
                       type="button"
-                      className={`variant-option color-option ${
-                        selectedColor === option.color ? "active" : ""
-                      } ${option.hasStock ? "" : "disabled"}`}
+                      className={`variant-option color-option active ${option.hasStock ? "" : "disabled"}`}
                       disabled={!option.hasStock}
                       onClick={() => {
                         setSelectedColor(option.color);

@@ -24,10 +24,11 @@ class LightFMRecommender:
         no_components: int = 64,
         loss: str = "warp",
         learning_rate: float = 0.05,
-        item_alpha: float = 1e-6,
-        user_alpha: float = 1e-6,
-        epochs: int = 30,
+        item_alpha: float = 1e-5,
+        user_alpha: float = 1e-5,
+        epochs: int = 80,
         num_threads: int = 4,
+        random_state: int | None = None,
     ) -> None:
         self.no_components = no_components
         self.loss = loss
@@ -36,6 +37,7 @@ class LightFMRecommender:
         self.user_alpha = user_alpha
         self.epochs = epochs
         self.num_threads = num_threads
+        self.random_state = random_state
 
         self.model: Optional[LightFM] = None
         self.dataset: Optional[Dataset] = None
@@ -125,6 +127,7 @@ class LightFMRecommender:
             learning_rate=self.learning_rate,
             item_alpha=self.item_alpha,
             user_alpha=self.user_alpha,
+            random_state=self.random_state,
         )
         model.fit(
             interactions=interactions_matrix,
@@ -408,7 +411,7 @@ class LightFMRecommender:
     def recommend_for_user(
         self,
         user_id: str,
-        top_n: int = 20,
+        top_n: int = 30,
         exclude_interacted: bool = True,
         user_gender: str | None = None,
         season_boost_weight: float = 0.0,
@@ -507,6 +510,55 @@ class LightFMRecommender:
             (self._index_to_item[int(idx)], float(predictions[int(idx)]))
             for idx in top_indices
             if np.isfinite(predictions[int(idx)])
+        ]
+
+    def similar_items(
+        self,
+        product_id: str,
+        top_n: int = 20,
+        min_score: float | None = None,
+    ) -> list[tuple[str, float]]:
+        """
+        Return top_n similar items using item embeddings and cosine similarity.
+        """
+        self._require_fitted()
+
+        item_index = self.item_id_map.get(str(product_id))
+        if item_index is None:
+            return []
+
+        _, item_embeddings = self.model.get_item_representations(self.item_features)
+        if item_embeddings is None or item_embeddings.size == 0:
+            return []
+
+        target_vec = item_embeddings[item_index]
+        target_norm = float(np.linalg.norm(target_vec))
+        if target_norm == 0.0:
+            return []
+
+        norms = np.linalg.norm(item_embeddings, axis=1)
+        denom = norms * target_norm
+        denom = np.where(denom == 0.0, 1.0, denom)
+        scores = item_embeddings @ target_vec / denom
+        scores[item_index] = -np.inf
+
+        if min_score is not None:
+            threshold = float(min_score)
+            scores = np.where(scores >= threshold, scores, -np.inf)
+
+        valid_mask = np.isfinite(scores)
+        valid_count = int(valid_mask.sum())
+        if valid_count == 0:
+            return []
+
+        effective_top_n = max(1, min(top_n, valid_count))
+        top_indices = np.argpartition(scores, -effective_top_n)[-effective_top_n:]
+        top_indices = top_indices[np.argsort(scores[top_indices])[::-1]]
+
+        return [
+            (self._index_to_item[int(idx)], float(scores[int(idx)]))
+            for idx in top_indices
+            if np.isfinite(scores[int(idx)])
         ]
 
     def save_artifacts(self, artifact_dir: Path | str) -> None:

@@ -39,7 +39,7 @@ Ranking hien tai:
 ### CLUSTER (co-viewed) - giai thich
 
 - BE hien tai lay co-view theo cung user trong cua so lookback (recommendation.cluster-lookback-days).
-- Python pipeline co the bo sung bien the session-based theo cua so 30 phut de tao item-item similarity matrix.
+- Python pipeline co the bo sung bien the session-based theo cua so 30 phut de tao signal co-view.
 
 Query tham khao cho session-based co-view:
 
@@ -189,12 +189,7 @@ Output:
   - "trending" — san pham xu huong 7 ngay gan
   - "popular" — popular toan he thong
 
-### 7.3 GET /similar/{product_id}?top_n=10
-
-- Tra danh sach san pham tuong tu dua tren Item-based Collaborative Filtering (cosine similarity).
-- Dung cho trang chi tiet san pham ("San pham tuong tu").
-
-### 7.4 POST /admin/reload
+### 7.3 POST /admin/reload
 
 - Reload toan bo model artifacts tu disk ma khong can restart server.
 - Goi sau khi train lai model.
@@ -249,11 +244,10 @@ Output:
   - feature_engineering.py — item features + co-view + price buckets
 - models/
   - lightfm_model.py — LightFM hybrid model (main)
-  - collaborative_filtering.py — Item-based CF (similar items)
   - fallback.py — Cold-start fallback (popular/trending/by-gender)
   - saved/ — model artifacts output
 - training/
-  - train.py — full pipeline: LightFM + ItemCF + fallback + evaluate
+  - train.py — full pipeline: LightFM + fallback + evaluate
   - evaluate.py — precision/recall/NDCG + coverage + novelty
 - api/
   - main.py — FastAPI endpoints
@@ -281,10 +275,6 @@ Output:
 - interactions.joblib — training interactions matrix (dung de filter items da tuong tac)
 - user_id_map.json → {"uuid-string": int_index}
 - item_id_map.json → {"uuid-string": int_index}
-
-### ItemCF artifact
-
-- item_cf.joblib — item-item cosine similarity matrix + mappings
 
 ### Fallback artifact
 

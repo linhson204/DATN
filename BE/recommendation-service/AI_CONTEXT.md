@@ -136,7 +136,7 @@ Luu y dialect: dung cu phap MySQL (LIMIT, DATE_SUB, TIMESTAMPDIFF), khong dung I
 
 Tu ProductViewLogService.resolveViewType(durationSeconds):
 
-- duration < 60 -> QUICK_VIEW
+- 6 < duration < 60 -> QUICK_VIEW
 - 60 <= duration < 210 -> DETAIL_VIEW
 - duration >= 210 -> DEEP_VIEW
 
@@ -178,10 +178,26 @@ Output:
 }
 ```
 
-### 7.2 GET /recommend/{user_id} (tuy chon)
+### 7.2 GET /recommend/{user_id}?top_n=20&gender=MALE
 
 - Tra top-N truc tiep tu model.
 - Dung khi khong co seed product hoac can feed personalized home.
+- Neu user chua co trong model (cold-start): tu dong fallback sang popular/trending.
+- Response co them truong "strategy" cho biet nguon goi y:
+  - "personalized" — LightFM model
+  - "popular_by_gender:MALE" — popular theo gioi tinh
+  - "trending" — san pham xu huong 7 ngay gan
+  - "popular" — popular toan he thong
+
+### 7.3 GET /similar/{product_id}?top_n=10
+
+- Tra danh sach san pham tuong tu dua tren Item-based Collaborative Filtering (cosine similarity).
+- Dung cho trang chi tiet san pham ("San pham tuong tu").
+
+### 7.4 POST /admin/reload
+
+- Reload toan bo model artifacts tu disk ma khong can restart server.
+- Goi sau khi train lai model.
 
 ## 8) Du lieu train de xuat
 
@@ -207,32 +223,42 @@ Output:
 
 ## 9) Cac metric nen bao cao
 
+### Accuracy metrics
+
 - Precision@10
 - Recall@20
 - NDCG@10
-- So sanh voi baseline:
-  - Most popular
-  - Rule-based hien tai
-  - LightFM hybrid (model chinh)
 
-## 10) Cau truc project Python khuyen nghi (trong folder recommendation-service)
+### Beyond-accuracy metrics
+
+- Catalog Coverage@10 — bao nhieu % san pham trong catalog duoc recommend it nhat 1 lan
+- Novelty@10 — muc do moi la cua recommendation (mean(-log2(popularity)))
+
+### So sanh voi baseline:
+
+- Most popular
+- LightFM hybrid (model chinh)
+
+## 10) Cau truc project Python (trong folder recommendation-service)
 
 - requirements.txt
 - config.py
+- main.py (entry point → api.main.run_server)
 - data/
-  - data_pipeline.py
-  - feature_engineering.py
+  - data_pipeline.py — extract views/orders/wishlist tu MySQL
+  - feature_engineering.py — item features + co-view + price buckets
 - models/
-  - collaborative_filtering.py
-  - lightfm_model.py
-  - saved/
+  - lightfm_model.py — LightFM hybrid model (main)
+  - collaborative_filtering.py — Item-based CF (similar items)
+  - fallback.py — Cold-start fallback (popular/trending/by-gender)
+  - saved/ — model artifacts output
 - training/
-  - train.py
-  - evaluate.py
+  - train.py — full pipeline: LightFM + ItemCF + fallback + evaluate
+  - evaluate.py — precision/recall/NDCG + coverage + novelty
 - api/
-  - main.py
-  - schemas.py
-  - dependencies.py
+  - main.py — FastAPI endpoints
+  - schemas.py — Pydantic request/response models
+  - dependencies.py — artifact loading + reload
 - notebooks/
 
 ## 11) LightFM default hyperparameters (starting point)
@@ -245,15 +271,28 @@ Output:
 - item_alpha: 1e-6
 - user_alpha: 1e-6
 
-## 12) Model artifact format
+## 12) Model artifact format (models/saved/)
 
-- Luu model bang:
-  - joblib.dump(model, "models/saved/lightfm_model.joblib")
-- Luu kem:
-  - user_id_map.json -> {"uuid-string": int_index}
-  - item_id_map.json -> {"uuid-string": int_index}
-  - dataset.pkl -> LightFM Dataset object (dung lai khi build feature)
-- Khong dung pickle thuan cho artifact chinh de giam rui ro tuong thich va bao mat.
+### LightFM artifacts
+
+- lightfm_model.joblib — LightFM model object
+- dataset.pkl — LightFM Dataset (dung lai khi build feature)
+- item_features.joblib — sparse matrix item features
+- interactions.joblib — training interactions matrix (dung de filter items da tuong tac)
+- user_id_map.json → {"uuid-string": int_index}
+- item_id_map.json → {"uuid-string": int_index}
+
+### ItemCF artifact
+
+- item_cf.joblib — item-item cosine similarity matrix + mappings
+
+### Fallback artifact
+
+- fallback.json — popular/trending/by-gender item lists
+
+### Evaluation
+
+- metrics.json — precision/recall/NDCG/coverage/novelty cho popular baseline va LightFM
 
 ## 13) Vi du data mau (dung de test pipeline)
 
@@ -288,18 +327,18 @@ order_items:
 4. Python service phai dung UUID string cho user_id/product_id de khop BE.
 5. Neu Python service down, BE phai co fallback ve rule-based ranking.
 
-## 15) Lenh chay thuong dung va next step
+## 15) Lenh chay thuong dung
 
-Lenh chay:
+Java BE:
 
 - Build Java: mvn -DskipTests compile
 - Run Java: mvn spring-boot:run
 - Flyway info (plugin):
   - mvn flyway:info '-Dflyway.url=jdbc:mysql://localhost:3306/test' '-Dflyway.user=root' '-Dflyway.password=\*\*\*'
 
-Next step:
+Python Recommendation Service:
 
-1. Viet script data extraction tu MySQL sang interaction dataset.
-2. Train baseline + LightFM.
-3. Export model artifact (model + user/item mapping).
-4. Dung FastAPI /score de BE goi re-ranking.
+- Extract data: python -m data.data_pipeline
+- Train model (full pipeline): python -m training.train
+- Run API server: python main.py
+- Reload model (API dang chay): curl -X POST http://localhost:8000/admin/reload

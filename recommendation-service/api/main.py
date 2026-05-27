@@ -6,17 +6,16 @@ import os
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.dependencies import get_fallback, get_item_cf, get_recommender, reload_all
+from api.dependencies import get_fallback, get_recommender, reload_all
 from api.schemas import (
     RecommendResponse,
     ScoreItem,
     ScoreRequest,
     ScoreResponse,
-    SimilarItemsResponse,
+    SimilarResponse,
 )
 from config import settings
 from data.season import get_current_season
-from models.collaborative_filtering import ItemCollaborativeFiltering
 from models.fallback import PopularItemsFallback
 from models.lightfm_model import LightFMRecommender
 
@@ -25,7 +24,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Recommendation Scoring Service",
     version="0.2.0",
-    description="FastAPI service for scoring, personalized recommendations, and similar items.",
+    description="FastAPI service for scoring and personalized recommendations.",
 )
 
 app.add_middleware(
@@ -174,39 +173,40 @@ def recommend_for_user(
 
 
 # ======================================================================
-# GET /similar/{product_id} — item-based similar products
+# GET /similar/{product_id} — similar items by item embeddings
 # ======================================================================
 
 
-@app.get("/similar/{product_id}", response_model=SimilarItemsResponse)
+@app.get("/similar/{product_id}", response_model=SimilarResponse)
 def similar_items(
     product_id: str,
-    top_n: int = Query(10, ge=1, le=50),
-    item_cf: ItemCollaborativeFiltering = Depends(get_item_cf),
-) -> SimilarItemsResponse:
+    top_n: int = Query(10, ge=1, le=100),
+    recommender: LightFMRecommender = Depends(get_recommender),
+) -> SimilarResponse:
     """
-    Tìm các sản phẩm tương tự với một sản phẩm cho trước (Item-to-Item Collaborative Filtering).
-    Dựa vào ma trận tương tác (user-item), tính ra độ tương đồng cosine (cosine similarity) 
-    giữa các item để xem những user xem sản phẩm này thường xem những sản phẩm nào khác.
-    Rất hữu ích khi dùng hiển thị ở mục "Sản phẩm tương tự" ở trang chi tiết sản phẩm.
+    Lấy danh sách sản phẩm tương tự dựa trên item embeddings của LightFM.
     """
     try:
-        similar = item_cf.recommend(product_id, top_n=top_n)
+        similar = recommender.similar_items(product_id, top_n=top_n)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    if not similar:
-        logger.warning("GET /similar/%s returned 0 results (unknown product)", product_id)
-    else:
-        logger.info("GET /similar/%s returned %d results", product_id, len(similar))
+    if product_id not in recommender.item_id_map:
+        raise HTTPException(status_code=404, detail="Unknown product_id")
 
-    return SimilarItemsResponse(
+    logger.info(
+        "GET /similar/%s returned %d items",
+        product_id,
+        len(similar),
+    )
+
+    return SimilarResponse(
         product_id=product_id,
-        similar_items=[
-            ScoreItem(product_id=pid, score=score)
-            for pid, score in similar
+        similarities=[
+            ScoreItem(product_id=item_id, score=score)
+            for item_id, score in similar
         ],
     )
 
@@ -226,23 +226,19 @@ def admin_reload() -> dict[str, str]:
     try:
         artifacts = reload_all()
         recommender = artifacts["recommender"]
-        item_cf = artifacts["item_cf"]
 
         user_count = len(recommender.user_id_map)
         item_count = len(recommender.item_id_map)
-        cf_items = len(item_cf.item_to_index)
 
         logger.info(
-            "All artifacts reloaded: LightFM(%d users, %d items), ItemCF(%d items)",
+            "All artifacts reloaded: LightFM(%d users, %d items)",
             user_count,
             item_count,
-            cf_items,
         )
         return {
             "status": "reloaded",
             "lightfm_users": str(user_count),
             "lightfm_items": str(item_count),
-            "item_cf_items": str(cf_items),
         }
     except FileNotFoundError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

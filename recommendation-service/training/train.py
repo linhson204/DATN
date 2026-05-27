@@ -9,7 +9,6 @@ from config import settings
 from data.data_pipeline import build_engine, extract_interactions, save_interactions
 from data.feature_engineering import item_feature_tuples_for_catalog, user_feature_tuples_for_users
 from data.season import build_item_season_map
-from models.collaborative_filtering import ItemCollaborativeFiltering
 from models.fallback import PopularItemsFallback
 from models.lightfm_model import LightFMRecommender
 from training.evaluate import evaluate_lightfm, evaluate_popular_baseline, time_based_split
@@ -24,9 +23,8 @@ def train_pipeline(mysql_url: str | None = None, include_wishlist: bool | None =
     2. Chia dữ liệu theo thời gian (time-based split).
     3. Chuẩn bị feature cho sản phẩm và người dùng (giới tính, nhóm tuổi).
     4. Huấn luyện mô hình LightFM.
-    5. Huấn luyện mô hình ItemCF (cho mục "Sản phẩm tương tự").
-    6. Xây dựng danh sách fallback (sản phẩm phổ biến/trending) cho cold-start.
-    7. Đánh giá hiệu năng và lưu kết quả.
+    5. Xây dựng danh sách fallback (sản phẩm phổ biến/trending) cho cold-start.
+    6. Đánh giá hiệu năng và lưu kết quả.
     """
     engine = build_engine(mysql_url)
 
@@ -89,6 +87,7 @@ def train_pipeline(mysql_url: str | None = None, include_wishlist: bool | None =
         user_alpha=settings.lightfm_user_alpha,
         epochs=settings.lightfm_epochs,
         num_threads=settings.lightfm_num_threads,
+        random_state=settings.lightfm_random_state,
     )
 
     logger.info(
@@ -113,15 +112,7 @@ def train_pipeline(mysql_url: str | None = None, include_wishlist: bool | None =
     recommender.save_artifacts(settings.artifact_dir)
 
     # ------------------------------------------------------------------
-    # 5. Huấn luyện mô hình ItemCF (cho mục "Sản phẩm tương tự")
-    # ------------------------------------------------------------------
-    logger.info("Training ItemCF for similar-items...")
-    item_cf = ItemCollaborativeFiltering()
-    item_cf.fit(train_df)
-    item_cf.save_artifacts(settings.similar_items_model_path)
-
-    # ------------------------------------------------------------------
-    # 6. Xây dựng danh sách fallback (sản phẩm phổ biến/trending) cho cold-start
+    # 5. Xây dựng danh sách fallback (sản phẩm phổ biến/trending) cho cold-start
     # ------------------------------------------------------------------
     logger.info("Building cold-start fallback lists...")
     fallback = PopularItemsFallback.build_from_data(
@@ -133,7 +124,7 @@ def train_pipeline(mysql_url: str | None = None, include_wishlist: bool | None =
     fallback.save(settings.fallback_data_path)
 
     # ------------------------------------------------------------------
-    # 7. Đánh giá mô hình
+    # 6. Đánh giá mô hình
     # ------------------------------------------------------------------
     logger.info("Evaluating models...")
     metrics = {

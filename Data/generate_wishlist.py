@@ -179,10 +179,10 @@ def main():
     
     now = datetime.now()
     
-    # Yêu cầu: 3.750 records wishlist. Mỗi user 25 items.
+    # Yêu cầu: 20000 records wishlist. Mỗi user 40 items.
     for u in users:
         u_id = u['id']
-        n_wishlist = 25
+        n_wishlist = 40
         pool, weights = group_pools.get(u['group'], fallback_pool)
 
         user_wishlist = weighted_sample_unique(pool, weights, n_wishlist)

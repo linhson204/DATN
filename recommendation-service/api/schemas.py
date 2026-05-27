@@ -46,6 +46,10 @@ class RecommendResponse(BaseModel):
     recommendations: list[ScoreItem]
 
 
-class SimilarItemsResponse(BaseModel):
+class SimilarResponse(BaseModel):
     product_id: str
-    similar_items: list[ScoreItem]
+    strategy: str = Field(
+        default="item_embedding",
+        description="Similarity based on LightFM item embeddings.",
+    )
+    similarities: list[ScoreItem]

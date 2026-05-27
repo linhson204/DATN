@@ -61,6 +61,7 @@ public enum ErrorCode {
     // External API
     GOONG_API_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "Không thể kết nối đến dịch vụ bản đồ Goong"),
     SHIPPING_FEE_CALCULATION_ERROR(HttpStatus.UNPROCESSABLE_ENTITY, "Không thể tính phí vận chuyển"),
+    PYTHON_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Dịch vụ gợi ý AI tạm thời không khả dụng"),
 
     // Server
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống, vui lòng thử lại sau");

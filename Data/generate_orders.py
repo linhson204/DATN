@@ -221,20 +221,23 @@ def main():
     order_items = []
     delivery_infos = []
     
-    statuses = ['DELIVERED', 'PENDING', 'CANCELLED']
-    status_weights = [0.6, 0.35, 0.05]
+    statuses = ["PENDING", "CONFIRMED", "SHIPPING", "DELIVERED", "CANCELLED",]
+    status_weights = [0.1, 0.2, 0.15, 0.5, 0.05]
     methods = ['Standard', 'Express', 'Next Day']
     payment_methods = ['COD', 'MOMO', 'ZALOPAY']
     payment_method_weights = [0.50, 0.25, 0.20]
     
     now = datetime.now()
-    ORDERS_PER_USER = 10
+    total_orders_target = 7500
+    base_orders = total_orders_target // max(len(users), 1)
+    extra_orders = total_orders_target % max(len(users), 1)
     
-    for u in users:
+    for idx, u in enumerate(users):
         u_id = u['id']
         pool, weights = group_pools.get(u['group'], fallback_pool)
+        orders_for_user = base_orders + (1 if idx < extra_orders else 0)
 
-        for _ in range(ORDERS_PER_USER):
+        for _ in range(orders_for_user):
             order_id = str(uuid.uuid4())
             delivery_id = str(uuid.uuid4())
             status = random.choices(statuses, weights=status_weights)[0]

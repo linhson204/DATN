@@ -18,6 +18,10 @@ CREATE TABLE orders (
     status VARCHAR(50) NOT NULL,
     shipping_fee DECIMAL(12,2) NOT NULL,
     total_amount DECIMAL(12,2) NOT NULL,
+    payment_method VARCHAR(30) NOT NULL DEFAULT 'COD',
+    payment_status VARCHAR(30) NOT NULL DEFAULT 'UNPAID',
+    payment_app_trans_id VARCHAR(100) NULL,
+    payment_transaction_id VARCHAR(100) NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_orders_user
@@ -30,3 +34,4 @@ CREATE TABLE orders (
 CREATE INDEX idx_orders_user_id ON orders (user_id);
 CREATE INDEX idx_orders_status ON orders (status);
 CREATE INDEX idx_orders_created_at ON orders (created_at);
+CREATE UNIQUE INDEX uq_orders_payment_app_trans_id ON orders (payment_app_trans_id);
