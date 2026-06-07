@@ -4,34 +4,9 @@ import { ordersApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import type { Order, OrderItem, PageResponse } from "../types/api";
 import { formatCurrency, formatDateTime } from "../utils/format";
-
-const orderStatusLabel: Record<Order["status"], string> = {
-  PENDING: "Chờ xác nhận",
-  CONFIRMED: "Đã xác nhận",
-  SHIPPING: "Đang giao",
-  DELIVERED: "Đã giao",
-  CANCELLED: "Đã hủy",
-};
-
-const orderStatusIcon: Record<Order["status"], string> = {
-  PENDING: "⏳",
-  CONFIRMED: "✅",
-  SHIPPING: "🚚",
-  DELIVERED: "📦",
-  CANCELLED: "✖",
-};
-
-const paymentStatusLabel: Record<string, string> = {
-  PENDING: "Chưa thanh toán",
-  PAID: "Đã thanh toán",
-  UNPAID: "Chưa thanh toán",
-};
-
-const paymentStatusIcon: Record<string, string> = {
-  PENDING: "💳",
-  PAID: "✔",
-  UNPAID: "💳",
-};
+import { Spinner } from "../components/ui/Spinner";
+import { OrderStatusBadge, PaymentStatusBadge } from "../components/ui/OrderBadges";
+import { EmptyState } from "../components/ui/EmptyState";
 
 function getOrderCode(orderId: string): string {
   return orderId.slice(0, 8).toUpperCase();
@@ -171,23 +146,17 @@ export function OrdersPage() {
 
       {/* ── States ── */}
       {isLoading ? (
-        <div className="op-loading">
-          <div className="op-spinner" />
-          <span>Đang tải đơn hàng...</span>
-        </div>
+        <Spinner message="Đang tải đơn hàng..." />
       ) : error ? (
         <p className="alert error">{error}</p>
       ) : ordersInPage.length === 0 ? (
-        <div className="op-empty">
-          <div className="op-empty-icon">🛍️</div>
-          <h3>Bạn chưa có đơn hàng nào</h3>
-          <p className="placeholder">
-            Hãy khám phá bộ sưu tập mới và đặt đơn đầu tiên của bạn.
-          </p>
-          <Link className="btn btn-primary" to="/products">
-            Đi đến trang sản phẩm
-          </Link>
-        </div>
+        <EmptyState
+          icon="🛍️"
+          title="Bạn chưa có đơn hàng nào"
+          description="Hãy khám phá bộ sưu tập mới và đặt đơn đầu tiên của bạn."
+          actionLabel="Đi đến trang sản phẩm"
+          actionTo="/products"
+        />
       ) : (
         <>
           {/* ── Stats bar ── */}
@@ -237,18 +206,8 @@ export function OrdersPage() {
                       </span>
                     </div>
                     <div className="op-status-group">
-                      <span
-                        className={`status status-${order.status.toLowerCase()}`}
-                      >
-                        {orderStatusIcon[order.status]}&nbsp;
-                        {orderStatusLabel[order.status]}
-                      </span>
-                      <span
-                        className={`payment-status payment-status-${order.paymentStatus?.toLowerCase() ?? "pending"}`}
-                      >
-                        {paymentStatusIcon[order.paymentStatus] ?? "💳"}&nbsp;
-                        {paymentStatusLabel[order.paymentStatus] ?? "Chưa thanh toán"}
-                      </span>
+                      <OrderStatusBadge status={order.status} />
+                      <PaymentStatusBadge paymentStatus={order.paymentStatus} />
                     </div>
                   </div>
 

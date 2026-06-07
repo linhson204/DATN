@@ -209,7 +209,7 @@
   margin-top: 1rem;
   display: grid;
   gap: 0.9rem;
-  grid-template-columns: repeat(auto-fit, minmax(218px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(218px, 1fr));
 }
 
 .home-product-card {

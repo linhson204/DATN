@@ -11,6 +11,18 @@ type RequestOptions = {
   signal?: AbortSignal;
 };
 
+export type CreateProductPayload = {
+  name: string;
+  brand: string;
+  categoryId?: string;
+  targetGender: "male" | "female" | "unisex";
+  description: string;
+  imageUrl?: string;
+  status?: boolean;
+};
+
+export type UpdateProductPayload = Partial<CreateProductPayload>;
+
 export const productsApi = {
   async list(query: ProductListQuery = {}): Promise<PageResponse<Product>> {
     const response = await http.get<unknown>("/v1/products", {
@@ -36,6 +48,28 @@ export const productsApi = {
         durationSeconds,
       },
     );
+    return unwrapApiResponse<ApiMessage>(response.data);
+  },
+
+  // ── Admin CRUD ──
+  async create(payload: CreateProductPayload): Promise<Product> {
+    const response = await http.post<unknown>("/v1/products", payload);
+    return unwrapApiResponse<Product>(response.data);
+  },
+
+  async update(
+    productId: string,
+    payload: UpdateProductPayload,
+  ): Promise<Product> {
+    const response = await http.put<unknown>(
+      `/v1/products/${productId}`,
+      payload,
+    );
+    return unwrapApiResponse<Product>(response.data);
+  },
+
+  async remove(productId: string): Promise<ApiMessage> {
+    const response = await http.delete<unknown>(`/v1/products/${productId}`);
     return unwrapApiResponse<ApiMessage>(response.data);
   },
 };

@@ -16,6 +16,7 @@ import type {
 } from "../types/api";
 import { formatCurrency } from "../utils/format";
 import { recordProductInteraction } from "../utils/productInteractions";
+import { Spinner } from "../components/ui/Spinner";
 
 type SizeOption = {
   size: string;
@@ -391,7 +392,9 @@ export function ProductDetailPage() {
 
   if (isLoading) {
     return (
-      <section className="surface-card">Đang tải chi tiết sản phẩm...</section>
+      <section className="surface-card">
+        <Spinner message="Đang tải chi tiết sản phẩm..." />
+      </section>
     );
   }
 

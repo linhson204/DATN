@@ -16,7 +16,7 @@ import spring.api.demo.exception.ErrorCode;
 import spring.api.demo.resource.MessageResource;
 import spring.api.demo.entity.OtpValid;
 import spring.api.demo.entity.OtpValid.OtpType;
-import spring.api.demo.service.AuthServiceInterface;
+import spring.api.demo.service.AuthService;
 import spring.api.demo.service.BlacklistService;
 import spring.api.demo.service.JwtService;
 import spring.api.demo.service.OtpService;
@@ -29,7 +29,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthServiceInterface authService;
+    private final AuthService authService;
     private final BlacklistService blacklistService;
     private final JwtService jwtService;
     private final OtpService otpService;

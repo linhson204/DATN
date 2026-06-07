@@ -549,6 +549,35 @@ textarea {
   justify-items: start;
 }
 
+/* EmptyState component (components/ui/EmptyState.tsx) */
+.empty-state-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.empty-state-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.empty-state-desc {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  max-width: 340px;
+  line-height: 1.5;
+}
+
 /* ============================================================
    Status badges
    ============================================================ */
@@ -588,6 +617,38 @@ textarea {
   background: rgba(255, 95, 109, 0.18);
   color: #a01426;
   border: 1px solid rgba(255, 95, 109, 0.45);
+}
+
+/* ============================================================
+   Shared Spinner (components/ui/Spinner.tsx)
+   ============================================================ */
+
+.app-spinner-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.app-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid rgba(60, 211, 193, 0.2);
+  border-top-color: var(--accent-cyan);
+  animation: spinnerRotate 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.app-spinner-msg {
+  color: var(--text-muted);
+}
+
+@keyframes spinnerRotate {
+  to { transform: rotate(360deg); }
 }
 
 /* ============================================================

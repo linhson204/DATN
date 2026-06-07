@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./components/AppLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { AdminPage } from "./pages/AdminPage";
+import { DashboardPage } from "./pages/dashboard/DashboardPage";
 import { AuthPage } from "./pages/AuthPage";
 import { CartPage } from "./pages/CartPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
@@ -19,6 +19,16 @@ import { WishlistPage } from "./pages/WishlistPage";
 export default function App() {
   return (
     <Routes>
+      {/* Dashboard – standalone, no AppLayout/navbar */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="/" element={<AppLayout />}>
         <Route index element={<HomePage />} />
         <Route path="auth" element={<AuthPage />} />
@@ -90,17 +100,9 @@ export default function App() {
           }
         />
 
-        <Route
-          path="admin"
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminPage />
-            </ProtectedRoute>
-          }
-        />
-
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );
 }
+

@@ -14,6 +14,7 @@ import { useAuth } from "../context/AuthContext";
 import type { PageResponse, Product, ProductListQuery } from "../types/api";
 import { formatCurrency } from "../utils/format";
 import { recordProductInteraction } from "../utils/productInteractions";
+import { ProductCard } from "../components/ui/ProductCard";
 
 const defaultQuery: ProductListQuery = {
   page: 0,
@@ -519,53 +520,13 @@ export function ProductsPage() {
         ) : (
           <div className="product-grid">
             {pageData.items.map((product, index) => (
-              <article
-                className="product-card"
+              <ProductCard
                 key={product.id}
-                style={{ animationDelay: `${index * 45}ms` }}
-              >
-                <div className="product-card-image">
-                  {product.imageUrl ? (
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span>{product.category?.articleType || "Sản phẩm"}</span>
-                  )}
-                </div>
-
-                <div className="product-card-header">
-                  <h3>{product.name}</h3>
-                  <span className="tag">{product.targetGender}</span>
-                </div>
-
-                <p className="muted">
-                  {product.brand} - {product.category?.articleType || "N/A"}
-                </p>
-                <p className="price">{formatCurrency(product.salePrice)}</p>
-                <p className="muted">Tồn kho: {product.totalStock}</p>
-
-                <div className="card-actions">
-                  <Link
-                    className="btn btn-outline"
-                    to={`/products/${product.id}`}
-                  >
-                    Chi tiết
-                  </Link>
-
-                  {isAuthenticated && (
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      onClick={() => openCartModal(product)}
-                    >
-                      Thêm vào giỏ
-                    </button>
-                  )}
-                </div>
-              </article>
+                product={product}
+                animationDelay={index * 45}
+                showStock
+                onAddToCart={isAuthenticated ? openCartModal : undefined}
+              />
             ))}
           </div>
         )}

@@ -50,9 +50,19 @@ export const ordersApi = {
     return unwrapApiResponse<Order>(response.data);
   },
 
-  async listAdmin(page = 0, size = 20): Promise<PageResponse<Order>> {
+  async listAdmin(
+    page = 0,
+    size = 20,
+    status?: string,
+    userName?: string,
+  ): Promise<PageResponse<Order>> {
     const response = await http.get<unknown>("/v1/orders/admin", {
-      params: { page, size },
+      params: {
+        page,
+        size,
+        ...(status ? { status } : {}),
+        ...(userName ? { userName } : {}),
+      },
     });
     return unwrapApiResponse<PageResponse<Order>>(response.data);
   },

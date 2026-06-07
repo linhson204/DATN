@@ -156,11 +156,33 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<OrderResponse> getAllOrdersForAdmin(String email, int page, int size) {
+    public PageResponse<OrderResponse> getAllOrdersForAdmin(String email, int page, int size, String status, String userName) {
         User user = getUserByEmail(email);
         validateAdmin(user);
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), Sort.by("createdAt").descending());
-        Page<Order> orders = orderRepository.findAll(pageable);
+
+        boolean hasStatus = status != null && !status.isBlank();
+        boolean hasName   = userName != null && !userName.isBlank();
+
+        String normalizedStatus = null;
+        if (hasStatus) {
+            normalizedStatus = status.trim().toUpperCase();
+            if (!VALID_ORDER_STATUS.contains(normalizedStatus)) {
+                throw new AppException(ErrorCode.INVALID_ORDER_STATUS);
+            }
+        }
+
+        Page<Order> orders;
+        if (hasName && hasStatus) {
+            orders = orderRepository.findByUserFullNameContainingIgnoreCaseAndStatus(userName.trim(), normalizedStatus, pageable);
+        } else if (hasName) {
+            orders = orderRepository.findByUserFullNameContainingIgnoreCase(userName.trim(), pageable);
+        } else if (hasStatus) {
+            orders = orderRepository.findByStatus(normalizedStatus, pageable);
+        } else {
+            orders = orderRepository.findAll(pageable);
+        }
+
         return PageResponse.fromPage(orders.map(orderMapper::toOrderResponse));
     }
 

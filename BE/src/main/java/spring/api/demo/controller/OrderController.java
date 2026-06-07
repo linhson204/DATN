@@ -50,10 +50,12 @@ public class OrderController {
     @GetMapping("/admin")
     public ResponseEntity<SuccessResource<PageResponse<OrderResponse>>> getAllOrdersForAdmin(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String userName
     ) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        PageResponse<OrderResponse> response = orderService.getAllOrdersForAdmin(email, page, size);
+        PageResponse<OrderResponse> response = orderService.getAllOrdersForAdmin(email, page, size, status, userName);
         return ResponseEntity.ok(new SuccessResource<>("Lấy toàn bộ danh sách đơn hàng thành công", response));
     }
 

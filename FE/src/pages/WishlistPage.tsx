@@ -5,6 +5,8 @@ import { wishlistApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import type { WishlistItem } from "../types/api";
 import { formatCurrency } from "../utils/format";
+import { Spinner } from "../components/ui/Spinner";
+import { EmptyState } from "../components/ui/EmptyState";
 
 function timeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -82,23 +84,15 @@ export function WishlistPage() {
 
 
         {isLoading ? (
-          <div className="wishlist-loading">
-            <div className="wishlist-loading-spinner" />
-            <p>Đang tải danh sách yêu thích...</p>
-          </div>
+          <Spinner message="Đang tải danh sách yêu thích..." className="wishlist-loading" />
         ) : items.length === 0 ? (
-          <div className="wishlist-empty">
-            <div className="wishlist-empty-icon" aria-hidden="true">
-              ♡
-            </div>
-            <h2>Danh sách yêu thích đang trống</h2>
-            <p className="muted">
-              Hãy khám phá sản phẩm và thêm vào yêu thích để dễ dàng theo dõi.
-            </p>
-            <Link to="/products" className="btn btn-primary">
-              Khám phá sản phẩm
-            </Link>
-          </div>
+          <EmptyState
+            icon="♡"
+            title="Danh sách yêu thích đang trống"
+            description="Hãy khám phá sản phẩm và thêm vào yêu thích để dễ dàng theo dõi."
+            actionLabel="Khám phá sản phẩm"
+            actionTo="/products"
+          />
         ) : (
           <div className="wishlist-grid">
             {items.map((item, index) => {

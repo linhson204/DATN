@@ -7,6 +7,8 @@ import type { Product } from "../types/api";
 import { formatCurrency } from "../utils/format";
 import { useInterestedProducts } from "../hooks/useInterestedProducts";
 import { useTodayBrowsedProducts } from "../hooks/useTodayBrowsedProducts";
+import { Spinner } from "../components/ui/Spinner";
+import { ProductCard } from "../components/ui/ProductCard";
 
 const HOME_PRODUCT_LIMIT = 30;
 
@@ -93,9 +95,6 @@ export function HomePage() {
             <Link to="/products" className="btn hero-btn-primary">
               Mua sắm ngay
             </Link>
-            <a href="#featured-products" className="btn hero-btn-ghost">
-              Xem bộ sưu tập
-            </a>
           </div>
         </div>
       </section>
@@ -124,36 +123,13 @@ export function HomePage() {
             </Link>
           </div>
         ) : isLoading ? (
-          <div className="home-loading">Đang tải sản phẩm...</div>
+          <Spinner message="Đang tải sản phẩm..." className="home-loading" />
         ) : recommendedProducts.length === 0 ? (
           <p className="placeholder">Chưa có sản phẩm để hiển thị.</p>
         ) : (
           <div className="home-product-grid">
             {recommendedProducts.map((product) => (
-              <article className="home-product-card" key={product.id}>
-                <div className="home-product-thumb">
-                  {product.imageUrl ? (
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span>{product.category?.articleType || "Sản phẩm"}</span>
-                  )}
-                </div>
-                <h3>{product.name}</h3>
-                <p className="muted">{product.brand}</p>
-                <p className="price">{formatCurrency(product.salePrice)}</p>
-                <div className="card-actions">
-                  <Link
-                    className="btn btn-outline"
-                    to={`/products/${product.id}`}
-                  >
-                    Xem chi tiết
-                  </Link>
-                </div>
-              </article>
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
@@ -212,32 +188,7 @@ export function HomePage() {
           ) : (
             <div className="home-product-grid interested-product-grid">
               {interestedProducts.products.map((product) => (
-                <article className="home-product-card" key={product.id}>
-                  <div className="home-product-thumb">
-                    {product.imageUrl ? (
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span>{product.category?.articleType || "Sản phẩm"}</span>
-                    )}
-                  </div>
-
-                  <h3>{product.name}</h3>
-                  <p className="muted">{product.brand}</p>
-                  <p className="price">{formatCurrency(product.salePrice)}</p>
-
-                  <div className="card-actions">
-                    <Link
-                      className="btn btn-outline"
-                      to={`/products/${product.id}`}
-                    >
-                      Xem chi tiết
-                    </Link>
-                  </div>
-                </article>
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}

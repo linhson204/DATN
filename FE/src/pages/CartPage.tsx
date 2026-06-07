@@ -5,17 +5,11 @@ import { cartApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import type { Cart } from "../types/api";
 import { formatCurrency } from "../utils/format";
+import { IconTrash } from "../components/icons/AppIcons";
+import { Spinner } from "../components/ui/Spinner";
+import { EmptyState } from "../components/ui/EmptyState";
 import "../styles/CartPage.css";
 
-/* ── Trash icon ── */
-const IconTrash = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-    <path d="M10 11v6M14 11v6" />
-    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-  </svg>
-);
 
 export function CartPage() {
   const [cart, setCart] = useState<Cart | null>(null);
@@ -111,10 +105,7 @@ export function CartPage() {
   if (isLoading) {
     return (
       <div className="surface-card">
-        <div className="cart-loading">
-          <div className="cart-spinner" />
-          <span>Đang tải giỏ hàng...</span>
-        </div>
+        <Spinner message="Đang tải giỏ hàng..." />
       </div>
     );
   }
@@ -133,14 +124,13 @@ export function CartPage() {
 
       {isEmpty ? (
         <div className="surface-card">
-          <div className="cart-empty">
-            <div className="cart-empty-icon">🛒</div>
-            <h3>Giỏ hàng trống</h3>
-            <p>Hãy thêm sản phẩm vào giỏ hàng để tiến hành thanh toán.</p>
-            <Link className="btn btn-primary" to="/products">
-              Khám phá sản phẩm
-            </Link>
-          </div>
+          <EmptyState
+            icon="🛒"
+            title="Giỏ hàng trống"
+            description="Hãy thêm sản phẩm vào giỏ hàng để tiến hành thanh toán."
+            actionLabel="Khám phá sản phẩm"
+            actionTo="/products"
+          />
         </div>
       ) : (
         <div className="cart-page">

@@ -4,34 +4,8 @@ import { ordersApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import type { Order, OrderItem } from "../types/api";
 import { formatCurrency, formatDateTime } from "../utils/format";
-
-const orderStatusLabel: Record<Order["status"], string> = {
-  PENDING: "Chờ xác nhận",
-  CONFIRMED: "Đã xác nhận",
-  SHIPPING: "Đang giao",
-  DELIVERED: "Đã giao",
-  CANCELLED: "Đã hủy",
-};
-
-const orderStatusIcon: Record<Order["status"], string> = {
-  PENDING: "⏳",
-  CONFIRMED: "✅",
-  SHIPPING: "🚚",
-  DELIVERED: "📦",
-  CANCELLED: "✖",
-};
-
-const paymentStatusLabel: Record<string, string> = {
-  PENDING: "Chưa thanh toán",
-  PAID: "Đã thanh toán",
-  UNPAID: "Chưa thanh toán",
-};
-
-const paymentStatusIcon: Record<string, string> = {
-  PENDING: "💳",
-  PAID: "✔",
-  UNPAID: "💳",
-};
+import { Spinner } from "../components/ui/Spinner";
+import { OrderStatusBadge, PaymentStatusBadge } from "../components/ui/OrderBadges";
 
 function getOrderCode(orderId: string): string {
   return orderId.slice(0, 8).toUpperCase();
@@ -126,10 +100,7 @@ export function OrderDetailPage() {
   if (isLoading) {
     return (
       <section className="surface-card">
-        <div className="op-loading">
-          <div className="op-spinner" />
-          <span>Đang tải chi tiết đơn hàng...</span>
-        </div>
+        <Spinner message="Đang tải chi tiết đơn hàng..." />
       </section>
     );
   }
@@ -194,16 +165,8 @@ export function OrderDetailPage() {
             <p className="order-detail-id">Mã đầy đủ: {order.id}</p>
           </div>
           <div className="order-detail-status-group">
-            <span className={`status status-${order.status.toLowerCase()}`}>
-              {orderStatusIcon[order.status]}&nbsp;
-              {orderStatusLabel[order.status]}
-            </span>
-            <span
-              className={`payment-status payment-status-${order.paymentStatus?.toLowerCase() ?? "pending"}`}
-            >
-              {paymentStatusIcon[order.paymentStatus] ?? "💳"}&nbsp;
-              {paymentStatusLabel[order.paymentStatus] ?? "Chưa thanh toán"}
-            </span>
+            <OrderStatusBadge status={order.status} />
+            <PaymentStatusBadge paymentStatus={order.paymentStatus} />
           </div>
         </div>
 
