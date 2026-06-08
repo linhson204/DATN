@@ -16,7 +16,7 @@ from training.evaluate import evaluate_lightfm, evaluate_popular_baseline, time_
 logger = logging.getLogger(__name__)
 
 
-def train_pipeline(mysql_url: str | None = None, include_wishlist: bool | None = None) -> dict[str, dict[str, float]]:
+def train_pipeline(mysql_url: str | None = None) -> dict[str, dict[str, float]]:
     """
     Pipeline huấn luyện hoàn chỉnh:
     1. Trích xuất dữ liệu tương tác từ MySQL.
@@ -32,7 +32,7 @@ def train_pipeline(mysql_url: str | None = None, include_wishlist: bool | None =
     # 1. Trích xuất dữ liệu tương tác từ MySQL
     # ------------------------------------------------------------------
     logger.info("Extracting interactions from database...")
-    interactions = extract_interactions(engine, include_wishlist=include_wishlist)
+    interactions = extract_interactions(engine)
 
     if interactions.empty:
         raise RuntimeError("No interactions found. Check source tables and lookback windows.")
@@ -151,10 +151,9 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Train LightFM model and export artifacts.")
     parser.add_argument("--mysql-url", dest="mysql_url", default=None)
-    parser.add_argument("--include-wishlist", action="store_true")
     args = parser.parse_args()
 
-    metrics = train_pipeline(mysql_url=args.mysql_url, include_wishlist=args.include_wishlist)
+    metrics = train_pipeline(mysql_url=args.mysql_url)
     print(json.dumps(metrics, indent=2))
 
 

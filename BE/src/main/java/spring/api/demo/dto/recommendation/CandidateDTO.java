@@ -21,6 +21,7 @@ import java.util.UUID;
 public class CandidateDTO {
 
     UUID productId;
+    UUID categoryId;          // Dùng để hard-filter bắt buộc cùng category
     String productName;
     String brand;
     String articleType;

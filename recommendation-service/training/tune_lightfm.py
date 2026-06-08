@@ -46,11 +46,11 @@ def _iter_param_grid(base: dict[str, Any], grid: dict[str, Iterable[Any]]) -> It
         yield params
 
 
-def run_tuning(mysql_url: str | None, include_wishlist: bool, top_n: int) -> pd.DataFrame:
+def run_tuning(mysql_url: str | None, top_n: int) -> pd.DataFrame:
     engine = build_engine(mysql_url)
 
     logger.info("Extracting interactions from database...")
-    interactions = extract_interactions(engine, include_wishlist=include_wishlist)
+    interactions = extract_interactions(engine)
     if interactions.empty:
         raise RuntimeError("No interactions found. Check source tables and lookback windows.")
 
@@ -125,14 +125,12 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="Grid search for LightFM hyperparameters.")
     parser.add_argument("--mysql-url", dest="mysql_url", default=None)
-    parser.add_argument("--include-wishlist", action="store_true")
     parser.add_argument("--top-n", type=int, default=30)
     parser.add_argument("--sort-by", default="ndcg@10")
     args = parser.parse_args()
 
     results = run_tuning(
         mysql_url=args.mysql_url,
-        include_wishlist=args.include_wishlist,
         top_n=args.top_n,
     )
 

@@ -5,8 +5,6 @@ import { authStorage } from "../utils/storage";
 export const beBaseUrl =
   import.meta.env.VITE_BE_BASE_URL?.trim() || "http://localhost:8081";
 
-export const recBaseUrl =
-  import.meta.env.VITE_REC_BASE_URL?.trim() || "http://localhost:8000";
 
 const timeoutMs = 20000;
 
@@ -24,10 +22,6 @@ export const http = axios.create({
   timeout: timeoutMs,
 });
 
-export const recommendationHttp = axios.create({
-  baseURL: recBaseUrl,
-  timeout: timeoutMs,
-});
 
 http.interceptors.request.use((config) => {
   const token = authStorage.getAccessToken();

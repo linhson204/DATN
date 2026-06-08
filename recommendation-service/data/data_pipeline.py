@@ -147,25 +147,90 @@ def extract_wishlist_interactions(engine: Engine, lookback_days: Optional[int] =
     return wishlist[["user_id", "product_id", "weight", "created_at", "signal"]]
 
 
+def extract_review_interactions(engine: Engine, lookback_days: Optional[int] = None) -> pd.DataFrame:
+    """
+    Trích xuất tín hiệu đánh giá sao từ bảng product_reviews.
+
+    Mapping trọng số:
+        5 sao → +5,  4 sao → +3,  3 sao → +1
+        2 sao → bỏ qua (không đóng góp),  1 sao → -1
+
+    Đơn hàng KHÔNG có review (implicit positive) → +5 điểm tự động.
+
+    Trả về:
+        DataFrame chứa các cột: user_id, product_id, weight, created_at, signal.
+    """
+    days = int(lookback_days or settings.review_lookback_days)
+    cutoff = datetime.now() - timedelta(days=days)
+
+    # 1. Lấy các đánh giá có sao
+    review_query = text(
+        """
+        SELECT user_id, product_id, rating, created_at
+        FROM product_reviews
+        WHERE created_at >= :cutoff
+        """
+    )
+    reviews = pd.read_sql(review_query, engine, params={"cutoff": cutoff})
+
+    # 2. Lấy các đơn hàng đã mua nhưng chưa review (implicit 5 sao)
+    no_review_query = text(
+        """
+        SELECT DISTINCT o.user_id, oi.product_id, o.created_at
+        FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        WHERE oi.product_id IS NOT NULL
+          AND o.status <> 'CANCELLED'
+          AND o.created_at >= :cutoff
+          AND NOT EXISTS (
+              SELECT 1 FROM product_reviews r
+              WHERE r.user_id = o.user_id AND r.product_id = oi.product_id
+          )
+        """
+    )
+    no_review = pd.read_sql(no_review_query, engine, params={"cutoff": cutoff})
+
+    frames: list[pd.DataFrame] = []
+
+    if not reviews.empty:
+        RATING_WEIGHT_MAP = {5: 5.0, 4: 3.0, 3: 1.0, 2: 0.0, 1: -1.0}
+        reviews["weight"] = reviews["rating"].map(RATING_WEIGHT_MAP)
+        reviews = reviews[reviews["weight"] != 0.0].copy()  # bỏ 2 sao
+        reviews["signal"] = "REVIEW"
+        if not reviews.empty:
+            frames.append(reviews[["user_id", "product_id", "weight", "created_at", "signal"]])
+
+    if not no_review.empty:
+        no_review["weight"] = 5.0
+        no_review["signal"] = "REVIEW_IMPLICIT"
+        frames.append(no_review[["user_id", "product_id", "weight", "created_at", "signal"]])
+
+    if not frames:
+        return pd.DataFrame(columns=["user_id", "product_id", "weight", "created_at", "signal"])
+
+    result = pd.concat(frames, ignore_index=True)
+    logger.info(
+        "Review interactions: %d explicit, %d implicit (no-review orders)",
+        len(reviews) if not reviews.empty else 0,
+        len(no_review) if not no_review.empty else 0,
+    )
+    return result
+
+
 def combine_interactions(
     views: pd.DataFrame,
     orders: pd.DataFrame,
     wishlist: Optional[pd.DataFrame] = None,
+    reviews: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """
-    Kết hợp dữ liệu từ nhiều nguồn (views, orders, wishlist) thành một DataFrame duy nhất.
-    
-    Tham số:
-        views: DataFrame chứa dữ liệu xem sản phẩm.
-        orders: DataFrame chứa dữ liệu đặt hàng.
-        wishlist: DataFrame chứa dữ liệu yêu thích (tùy chọn).
-        
-    Trả về:
-        DataFrame đã được tổng hợp, làm sạch và sắp xếp theo thời gian.
+    Kết hợp dữ liệu từ nhiều nguồn (views, orders, wishlist, reviews) thành một DataFrame duy nhất.
     """
     frames = [views, orders]
     if wishlist is not None and not wishlist.empty:
         frames.append(wishlist)
+    if reviews is not None and not reviews.empty:
+        frames.append(reviews)
 
     combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
     if combined.empty:
@@ -197,20 +262,14 @@ def combine_interactions(
     return aggregated
 
 
-def extract_interactions(engine: Engine, include_wishlist: Optional[bool] = None) -> pd.DataFrame:
+def extract_interactions(engine: Engine) -> pd.DataFrame:
     """
     Hàm chính để trích xuất toàn bộ dữ liệu tương tác từ database.
+    Luôn bao gồm: views, orders, wishlist.
     
-    Tham số:
-        engine: SQLAlchemy engine kết nối tới database.
-        include_wishlist: Cờ boolean để quyết định có bao gồm dữ liệu wishlist vào mô hình không.
-                          Nếu là None, sẽ lấy giá trị từ settings.include_wishlist_signal.
-                          
     Trả về:
         DataFrame chứa toàn bộ dữ liệu tương tác đã được tổng hợp và làm sạch.
     """
-    include_wishlist = settings.include_wishlist_signal if include_wishlist is None else include_wishlist
-
     views = extract_view_interactions(engine)
     logger.info("Extracted %d view interactions", len(views))
 
@@ -218,15 +277,21 @@ def extract_interactions(engine: Engine, include_wishlist: Optional[bool] = None
     logger.info("Extracted %d order interactions", len(orders))
 
     wishlist = None
-    if include_wishlist:
-        try:
-            wishlist = extract_wishlist_interactions(engine)
-            logger.info("Extracted %d wishlist interactions", len(wishlist))
-        except SQLAlchemyError:
-            logger.warning("Failed to extract wishlist interactions, skipping")
-            wishlist = None
+    try:
+        wishlist = extract_wishlist_interactions(engine)
+        logger.info("Extracted %d wishlist interactions", len(wishlist))
+    except SQLAlchemyError:
+        logger.warning("Failed to extract wishlist interactions, skipping")
 
-    interactions = combine_interactions(views=views, orders=orders, wishlist=wishlist)
+    # Tín hiệu review luôn được bật — bao gồm cả đơn hàng không review (implicit +5)
+    reviews = None
+    try:
+        reviews = extract_review_interactions(engine)
+        logger.info("Extracted %d review interactions (explicit + implicit)", len(reviews))
+    except SQLAlchemyError:
+        logger.warning("Failed to extract review interactions, skipping", exc_info=True)
+
+    interactions = combine_interactions(views=views, orders=orders, wishlist=wishlist, reviews=reviews)
     return interactions
 
 
@@ -256,11 +321,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Extract interactions from MySQL and save as CSV.")
     parser.add_argument("--mysql-url", dest="mysql_url", default=None)
     parser.add_argument("--output", dest="output", default=None)
-    parser.add_argument("--include-wishlist", action="store_true")
     args = parser.parse_args()
 
     engine = build_engine(args.mysql_url)
-    interactions = extract_interactions(engine, include_wishlist=args.include_wishlist)
+    interactions = extract_interactions(engine)
     output_path = save_interactions(interactions, args.output)
 
     print(f"Saved {len(interactions)} interactions to {output_path}")

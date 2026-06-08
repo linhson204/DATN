@@ -1,8 +1,8 @@
-import { http, recommendationHttp } from "../client";
+import { http } from "../client";
 import { unwrapApiResponse } from "../helpers";
 import type {
   CandidateResponse,
-  PythonRecommendResponse,
+  PersonalizedRecommendResponse,
   SimilarResponse,
 } from "../../types/api";
 
@@ -10,55 +10,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function normalizePythonRecommendResponse(
+function normalizePersonalizedResponse(
   payload: unknown,
-): PythonRecommendResponse {
+): PersonalizedRecommendResponse {
   if (!isRecord(payload)) {
     return {
       strategy: null,
-      productIds: [],
+      product_ids: [],
     };
   }
 
   const strategy =
     typeof payload.strategy === "string" ? payload.strategy : null;
 
-  if (Array.isArray(payload.productIds)) {
-    const normalizedProductIds = payload.productIds.filter(
+  if (Array.isArray(payload.product_ids)) {
+    const normalizedProductIds = payload.product_ids.filter(
       (value): value is string => typeof value === "string" && value.length > 0,
     );
 
     return {
       strategy,
-      productIds: normalizedProductIds,
+      product_ids: normalizedProductIds,
     };
   }
 
-  const recommendations = Array.isArray(payload.recommendations)
-    ? payload.recommendations
-    : [];
-
-  const productIds = recommendations
-    .map((item) => {
-      if (!isRecord(item)) {
-        return null;
-      }
-
-      if (typeof item.product_id === "string" && item.product_id.length > 0) {
-        return item.product_id;
-      }
-
-      if (typeof item.productId === "string" && item.productId.length > 0) {
-        return item.productId;
-      }
-
-      return null;
-    })
-    .filter((value): value is string => Boolean(value));
-
   return {
     strategy,
-    productIds,
+    product_ids: [],
   };
 }
 
@@ -73,20 +51,16 @@ function normalizeSimilarResponse(
     };
   }
 
+  // BE Java dùng @JsonProperty("product_id") nên serialize ra snake_case
   const productId =
     typeof payload.product_id === "string"
       ? payload.product_id
-      : typeof payload.productId === "string"
-        ? payload.productId
-        : fallbackProductId;
+      : fallbackProductId;
 
+  // BE Java trả "similarities" với mỗi item chứa "product_id" (snake_case)
   const similarItemsRaw = Array.isArray(payload.similarities)
     ? payload.similarities
-    : Array.isArray(payload.similar_items)
-      ? payload.similar_items
-      : Array.isArray(payload.similarItems)
-        ? payload.similarItems
-        : [];
+    : [];
 
   const similarItems = similarItemsRaw
     .map((item) => {
@@ -94,12 +68,11 @@ function normalizeSimilarResponse(
         return null;
       }
 
+      // BE Java: @JsonProperty("product_id") trên field productId
       const candidateProductId =
         typeof item.product_id === "string"
           ? item.product_id
-          : typeof item.productId === "string"
-            ? item.productId
-            : null;
+          : null;
 
       const score = typeof item.score === "number" ? item.score : null;
 
@@ -139,32 +112,40 @@ export const recommendationApi = {
     return unwrapApiResponse<CandidateResponse>(response.data);
   },
 
-  async recommendFromPython(
+  /** Gợi ý cá nhân hóa — gọi BE Java, Java nội bộ proxy sang AI Python */
+  async recommendPersonalized(
     userId: string,
     limit: number,
+    gender?: string,
     options?: RequestOptions,
-  ): Promise<PythonRecommendResponse> {
-    const response = await recommendationHttp.get<unknown>(
-      `/recommend/${userId}`,
+  ): Promise<PersonalizedRecommendResponse> {
+    const params: Record<string, string | number> = { topN: limit };
+    if (gender) {
+      params.gender = gender;
+    }
+
+    const response = await http.get<unknown>(
+      `/v1/recommendations/personalized/${userId}`,
       {
-        params: { top_n: limit },
+        params,
         signal: options?.signal,
       },
     );
 
     const payload = unwrapApiResponse<unknown>(response.data);
-    return normalizePythonRecommendResponse(payload);
+    return normalizePersonalizedResponse(payload);
   },
 
+  /** Sản phẩm tương tự — gọi BE Java, Java nội bộ proxy sang AI Python */
   async similar(
     productId: string,
     topN = 10,
     options?: RequestOptions,
   ): Promise<SimilarResponse> {
-    const response = await recommendationHttp.get<unknown>(
-      `/similar/${productId}`,
+    const response = await http.get<unknown>(
+      `/v1/recommendations/similar/${productId}`,
       {
-        params: { top_n: topN },
+        params: { topN },
         signal: options?.signal,
       },
     );

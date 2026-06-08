@@ -208,6 +208,7 @@ public class CandidateGenerationService {
 
         return CandidateDTO.builder()
                 .productId(product.getId())
+                .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .productName(product.getName())
                 .brand(product.getBrand())
             .articleType(product.getCategory() != null ? product.getCategory().getArticleType() : null)
@@ -223,6 +224,7 @@ public class CandidateGenerationService {
 
     /**
      * Hard filter:
+     * 0. categoryId == seed's categoryId (bắt buộc cùng category — ưu tiên cao nhất)
      * 1. status = true (active)
      * 2. totalStock > 0 (in stock)
      * 3. targetGender compatible with seed (male -> male/unisex, female -> female/unisex)
@@ -230,8 +232,13 @@ public class CandidateGenerationService {
      */
     private List<CandidateDTO> applyHardFilters(Map<UUID, CandidateDTO> candidateMap, Product seed) {
         Integer seedQuality = (seed.getMaterial() != null) ? seed.getMaterial().getQualityScore() : null;
+        UUID seedCategoryId = (seed.getCategory() != null) ? seed.getCategory().getId() : null;
 
         return candidateMap.values().stream()
+                // 0. Bắt buộc cùng category
+                .filter(c -> seedCategoryId != null
+                        ? seedCategoryId.equals(c.getCategoryId())
+                        : c.getCategoryId() == null)
                 .filter(c -> Boolean.TRUE.equals(c.getStatus()))
                 .filter(c -> c.getTotalStock() != null && c.getTotalStock() > 0)
                 .filter(c -> isGenderCompatible(seed, c))
@@ -276,8 +283,8 @@ public class CandidateGenerationService {
     }
 
     /**
-     * Sort by number of sources (desc: more sources = stronger signal),
-     * then limit to maxTotalCandidates.
+     * Sort by number of sources (desc: nhiều nguồn khớp = signal mạnh hơn),
+     * sau đó limit 10 kết quả trả về.
      */
     private List<CandidateDTO> limitTopN(List<CandidateDTO> candidates) {
         return candidates.stream()

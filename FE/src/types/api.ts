@@ -245,9 +245,9 @@ export type CandidateResponse = {
   candidates: RecommendationCandidate[];
 };
 
-export type PythonRecommendResponse = {
+export type PersonalizedRecommendResponse = {
   strategy: string | null;
-  productIds: string[];
+  product_ids: string[];
 };
 
 export type SimilarItemScore = {

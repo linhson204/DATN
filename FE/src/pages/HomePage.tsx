@@ -42,20 +42,21 @@ export function HomePage() {
           return;
         }
 
-        const recommendResponse = await recommendationApi.recommendFromPython(
+        const recommendResponse = await recommendationApi.recommendPersonalized(
           user.id,
           HOME_PRODUCT_LIMIT,
+          user.gender?.toUpperCase() ?? undefined,
         );
 
         setStrategy(recommendResponse.strategy);
 
-        if (recommendResponse.productIds.length === 0) {
+        if (recommendResponse.product_ids.length === 0) {
           setRecommendedProducts([]);
           return;
         }
 
         const detailResults = await Promise.allSettled(
-          recommendResponse.productIds.map((productId) =>
+          recommendResponse.product_ids.map((productId) =>
             productsApi.byId(productId),
           ),
         );
@@ -148,9 +149,7 @@ export function HomePage() {
           </div>
 
           <p className="featured-subtitle">
-            Gợi ý theo hành vi hôm nay (ưu tiên: order, cart, wishlist, view).
-            {interestedProducts.seedsCount > 0 &&
-              ` Đang dùng ${interestedProducts.seedsCount} seed gần nhất.`}
+            Gợi ý theo hành vi hôm nay.
           </p>
 
           {interestedProducts.isLoading ? (
@@ -317,7 +316,7 @@ export function HomePage() {
 
       <section id="contact" className="home-info-block">
         <h3>Liên hệ</h3>
-        <p>Email: support@sandt.vn | Hotline: 0909 000 111</p>
+        <p>Email: linhson24032004@gmail.com | Hotline: 0346689326</p>
       </section>
     </section>
   );

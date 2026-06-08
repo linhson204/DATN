@@ -98,7 +98,7 @@ def age_bucket_from_birth_year(value: object, reference_year: Optional[int] = No
 
 
 def load_item_feature_rows(engine: Engine) -> pd.DataFrame:
-    """Tải các hàng đặc trưng của sản phẩm từ cơ sở dữ liệu, bao gồm thông tin mùa."""
+    """Tải các hàng đặc trưng của sản phẩm từ cơ sở dữ liệu, bao gồm thông tin mùa và chất liệu."""
     query = text(
         """
         SELECT
@@ -109,11 +109,13 @@ def load_item_feature_rows(engine: Engine) -> pd.DataFrame:
             c.article_type,
             c.sub_category,
             c.master_category,
-            pa.attribute_value AS season
+            pa.attribute_value AS season,
+            md.code AS material_code
         FROM products p
         LEFT JOIN product_categories c ON c.id = p.category_id
         LEFT JOIN product_attributes pa
             ON pa.product_id = p.id AND pa.attribute_key = 'season'
+        LEFT JOIN material_dictionary md ON md.id = p.material_id
         WHERE p.status = TRUE
           AND p.total_stock > 0
         """
@@ -207,6 +209,10 @@ def build_lightfm_item_features(item_rows: pd.DataFrame) -> list[tuple[str, list
             features.append(f"master_category:{_normalize_token(row.master_category)}")
         if hasattr(row, "sale_price") and pd.notna(row.sale_price):
             features.append(_price_bucket(float(row.sale_price)))
+
+        # Thêm token chất liệu (material) — dùng code từ material_dictionary
+        if hasattr(row, "material_code") and pd.notna(row.material_code):
+            features.append(f"material:{_normalize_token(row.material_code)}")
 
         # Thêm token mùa (season) nếu có
         if hasattr(row, "season") and pd.notna(row.season):

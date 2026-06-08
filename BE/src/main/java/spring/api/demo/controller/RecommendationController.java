@@ -15,6 +15,7 @@ import spring.api.demo.service.CandidateGenerationService;
 import spring.api.demo.service.PythonRecommendationClient;
 import spring.api.demo.service.PythonRecommendationClient.PythonRecommendResult;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,10 +39,6 @@ public class RecommendationController {
         this.pythonClient = pythonClient;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Endpoint cũ: rule-based candidate generation (Phase 1)
-    // GET /v1/recommendations/candidates/{productId}
-    // ─────────────────────────────────────────────────────────────────────────
 
     @GetMapping("/candidates/{productId}")
     public ResponseEntity<CandidateResponse> getCandidates(@PathVariable UUID productId) {
@@ -49,12 +46,7 @@ public class RecommendationController {
         return ResponseEntity.ok(response);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Endpoint mới: personalized recommendations từ Python AI model (Phase 4)
-    // GET /v1/recommendations/personalized/{userId}?top_n=20&gender=MALE
-    //
-    // Fallback: nếu Python service down → trả về rỗng với fromAiModel=false
-    // ─────────────────────────────────────────────────────────────────────────
+
 
     @GetMapping("/personalized/{userId}")
     public ResponseEntity<PersonalizedRecommendResponse> getPersonalized(
@@ -83,23 +75,25 @@ public class RecommendationController {
                 .build());
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Endpoint sản phẩm tương tự từ AI model (Phase 4)
-    // GET /v1/recommendations/similar/{productId}
-    //
-    // Proxy sang Python FastAPI GET /similar/{productId}
-    // Fallback: nếu Python service down → trả về similarities rỗng với fromAiModel=false
-    // ─────────────────────────────────────────────────────────────────────────
 
     @GetMapping("/similar/{productId}")
     public ResponseEntity<SimilarProductResponse> getSimilar(@PathVariable String productId) {
         PythonRecommendationClient.SimilarResult result = pythonClient.getSimilar(productId);
 
         if (result != null) {
+            // Prepend sản phẩm gốc vào đầu danh sách với score=1.0
+            // → tổng = 1 (gốc) + 5 (tương tự) = 6 items
+            List<SimilarProductResponse.SimilarItem> allItems = new ArrayList<>();
+            allItems.add(SimilarProductResponse.SimilarItem.builder()
+                    .productId(productId)
+                    .score(1.0)
+                    .build());
+            allItems.addAll(result.similarities());
+
             return ResponseEntity.ok(SimilarProductResponse.builder()
                     .productId(productId)
                     .strategy(result.strategy())
-                    .similarities(result.similarities())
+                    .similarities(allItems)
                     .fromAiModel(true)
                     .build());
         }

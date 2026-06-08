@@ -25,7 +25,7 @@ public class RecommendationConfig {
     /**
      * Tổng số ứng viên tối đa sau khi gộp từ tất cả các nguồn để đưa vào bước xếp hạng cuối cùng. (Ví dụ: nếu đặt là 50, thì dù có bao nhiêu ứng viên từ các nguồn, chỉ chọn 50 ứng viên có điểm cao nhất để xếp hạng và hiển thị).
      */
-    int maxTotalCandidates = 25;
+    int maxTotalCandidates = 10;
 
     /**
      * Số ngày cần xem xét dữ liệu co-view (nguồn cluster).

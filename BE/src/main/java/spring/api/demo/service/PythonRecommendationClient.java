@@ -84,7 +84,12 @@ public class PythonRecommendationClient {
 
 
     public SimilarResult getSimilar(String productId) {
-        String url = baseUrl + "/similar/" + productId;
+        // top_n=5 vì BE sẽ prepend sản phẩm gốc → tổng 6 items trả về FE
+        String url = UriComponentsBuilder
+                .fromHttpUrl(baseUrl + "/similar/{productId}")
+                .queryParam("top_n", 5)
+                .buildAndExpand(productId)
+                .toUriString();
 
         try {
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
