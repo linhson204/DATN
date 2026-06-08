@@ -41,6 +41,12 @@ public enum ErrorCode {
     INVALID_ORDER_STATUS(HttpStatus.UNPROCESSABLE_ENTITY, "Trạng thái đơn hàng không hợp lệ"),
     INVALID_ORDER_AMOUNT(HttpStatus.UNPROCESSABLE_ENTITY, "Phí vận chuyển và tổng tiền không hợp lệ"),
 
+    // Review
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "Đánh giá không tồn tại"),
+    REVIEW_ALREADY_EXISTS(HttpStatus.UNPROCESSABLE_ENTITY, "Bạn đã đánh giá sản phẩm này rồi"),
+    REVIEW_NOT_PURCHASED(HttpStatus.FORBIDDEN, "Bạn cần mua và nhận sản phẩm này trước khi đánh giá"),
+    REVIEW_FORBIDDEN(HttpStatus.FORBIDDEN, "Bạn không có quyền xóa đánh giá này"),
+
     // Token
     TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Token không hợp lệ"),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Token đã hết hạn"),

@@ -106,3 +106,37 @@ CREATE TABLE material_dictionary (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE INDEX idx_material_dictionary_code ON material_dictionary (code);
+
+
+-- Tạo bảng đánh giá sản phẩm
+CREATE TABLE product_reviews (
+    id          CHAR(36)        NOT NULL,
+    user_id     CHAR(36)        NOT NULL,
+    product_id  CHAR(36)        NOT NULL,
+    rating      TINYINT         NOT NULL COMMENT 'Số sao đánh giá: 1–5',
+    comment     TEXT            NULL     COMMENT 'Nội dung bình luận (tuỳ chọn)',
+    created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+
+    -- Mỗi user chỉ được đánh giá 1 lần trên mỗi sản phẩm
+    CONSTRAINT uq_review_user_product UNIQUE (user_id, product_id),
+
+    CONSTRAINT fk_review_user
+        FOREIGN KEY (user_id)    REFERENCES users    (id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_review_product
+        FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+
+    CONSTRAINT chk_review_rating
+        CHECK (rating BETWEEN 1 AND 5)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+
+-- Index để query nhanh theo product (lấy danh sách review + tính avg)
+CREATE INDEX idx_review_product_id ON product_reviews (product_id);
+
+-- Index để query nhanh theo user (kiểm tra user đã review chưa)
+CREATE INDEX idx_review_user_id    ON product_reviews (user_id);

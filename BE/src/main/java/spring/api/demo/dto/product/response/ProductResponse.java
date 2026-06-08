@@ -36,4 +36,10 @@ public class ProductResponse {
     List<ProductVariantResponse> variants;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
+
+    /** Điểm đánh giá trung bình (null nếu chưa có review). */
+    Double averageRating;
+
+    /** Tổng số lượt đánh giá. */
+    Long totalReviews;
 }

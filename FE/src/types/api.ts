@@ -8,9 +8,21 @@ export type ApiError = {
 
 export type UserProfile = {
   id: string;
+  username?: string;
   email: string;
   name: string;
   role: string;
+  phone?: string | null;
+  address?: string | null;
+  gender?: string | null;
+  birthYear?: number | null;
+  point?: number | null;
+  balance?: number | null;
+  totalSpent?: number | null;
+  membershipLevel?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  isActive?: boolean | null;
 };
 
 export type LoginResponse = {
@@ -99,6 +111,9 @@ export type Product = {
   soldCount?: number;
   ratingAverage?: number | null;
   ratingCount?: number;
+  /** Từ BE mới: averageRating & totalReviews */
+  averageRating?: number | null;
+  totalReviews?: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -285,4 +300,35 @@ export type Wishlist = {
 
 export type AddWishlistItemPayload = {
   productId: string;
+};
+
+// ── Reviews ──
+
+export type ReviewRatingDistribution = {
+  "1": number;
+  "2": number;
+  "3": number;
+  "4": number;
+  "5": number;
+};
+
+export type ReviewSummary = {
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: ReviewRatingDistribution;
+};
+
+export type ReviewItem = {
+  id: string;
+  userId: string;
+  userFullName: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateReviewPayload = {
+  rating: number;
+  comment?: string;
 };

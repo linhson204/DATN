@@ -120,7 +120,6 @@
 
 .wishlist-card-image {
   position: relative;
-  height: 210px;
   border-bottom: 1px solid #eef0f4;
   background: linear-gradient(140deg, #f6f8fc, #edf2fa);
   display: grid;

@@ -72,6 +72,37 @@ export function ProductCard({
 
       <p className="price">{formatCurrency(product.salePrice)}</p>
 
+      {/* Rating row */}
+      {(() => {
+        const avg = product.averageRating ?? product.ratingAverage ?? null;
+        const count = product.totalReviews ?? product.ratingCount ?? 0;
+        const hasRating = avg != null && avg > 0;
+        return (
+          <div className="product-card-rating">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <span
+                key={s}
+                style={{
+                  color: hasRating && s <= Math.round(avg!) ? "#f5a623" : "#ccc",
+                  fontSize: "0.85rem",
+                }}
+              >
+                ★
+              </span>
+            ))}
+            {hasRating ? (
+              <span className="product-card-rating-text">
+                {avg!.toFixed(1)} ({count})
+              </span>
+            ) : (
+              <span className="product-card-rating-text" style={{ color: "#aaa" }}>
+                Chưa có đánh giá
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
       {showStock && (
         <p className="muted">Tồn kho: {product.totalStock}</p>
       )}

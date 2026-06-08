@@ -13,6 +13,7 @@ import spring.api.demo.entity.Product;
 import spring.api.demo.entity.ProductAttribute;
 import spring.api.demo.entity.ProductCategory;
 import spring.api.demo.entity.ProductVariant;
+import spring.api.demo.repository.ProductReviewRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,9 +22,11 @@ import java.util.List;
 public class ProductMapper {
 
     private final ProductCategoryMapper productCategoryMapper;
+    private final ProductReviewRepository productReviewRepository;
 
-    public ProductMapper(ProductCategoryMapper productCategoryMapper) {
+    public ProductMapper(ProductCategoryMapper productCategoryMapper, ProductReviewRepository productReviewRepository) {
         this.productCategoryMapper = productCategoryMapper;
+        this.productReviewRepository = productReviewRepository;
     }
 
     public Product toNewEntity(ProductCreateAndUpdateRequest request, ProductCategory category, MaterialDictionary material) {
@@ -67,6 +70,9 @@ public class ProductMapper {
             materialResponse = toMaterialResponse(product.getMaterial());
         }
 
+        Double avgRating = productReviewRepository.findAverageRatingByProductId(product.getId());
+        long totalReviews = productReviewRepository.countByProductId(product.getId());
+
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -88,6 +94,8 @@ public class ProductMapper {
                     .toList())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
+                .averageRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : null)
+                .totalReviews(totalReviews)
                 .build();
     }
 

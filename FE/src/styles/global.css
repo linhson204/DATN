@@ -433,6 +433,21 @@ textarea {
   font-size: 0.9rem;
 }
 
+.product-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+  line-height: 1;
+}
+
+.product-card-rating-text {
+  font-size: 0.8rem;
+  color: #b8a99a;
+  margin-left: 0.2rem;
+  font-weight: 500;
+}
+
 .pagination-row {
   margin-top: 1rem;
   display: flex;

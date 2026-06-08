@@ -17,6 +17,7 @@ import type {
 import { formatCurrency } from "../utils/format";
 import { recordProductInteraction } from "../utils/productInteractions";
 import { Spinner } from "../components/ui/Spinner";
+import { ProductReviews } from "../components/ui/ProductReviews";
 
 type SizeOption = {
   size: string;
@@ -92,6 +93,7 @@ export function ProductDetailPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [liveRating, setLiveRating] = useState<{ avg: number; count: number } | null>(null);
   const mountedAt = useRef<number>(Date.now());
 
   useEffect(() => {
@@ -408,11 +410,23 @@ export function ProductDetailPage() {
 
   const activeImage = galleryImages[activeImageIndex] || null;
   const soldCount = product.soldCount ?? 0;
-  const ratingCount = product.ratingCount ?? 0;
+  const ratingCount = product.totalReviews ?? product.ratingCount ?? 0;
   const ratingAverage =
-    typeof product.ratingAverage === "number" ? product.ratingAverage : 0;
-  const hasAnyVariant = (product.variants || []).length > 0;
+    typeof (product.averageRating ?? product.ratingAverage) === "number"
+      ? (product.averageRating ?? product.ratingAverage ?? 0)
+      : 0;
+  // Dùng dữ liệu live từ ReviewSummary nếu đã load, fallback về product data
+  const displayRatingAvg = liveRating?.avg ?? ratingAverage;
+  const displayRatingCount = liveRating?.count ?? ratingCount;
+
+  // Helper render sao inline
+  const renderStarRow = (avg: number) =>
+    [1, 2, 3, 4, 5].map((s) => (
+      <span key={s} style={{ color: s <= Math.round(avg) ? "#f5a623" : "#ddd", fontSize: "1rem" }}>★</span>
+    ));
+
   const canAddToCart = Boolean(selectedVariant && selectedStock > 0);
+  const hasAnyVariant = (product.variants || []).length > 0;
   const hasStockStatus = selectedStock > 0;
   const similarCandidates = candidates
     .filter((candidate) => candidate.status)
@@ -461,10 +475,15 @@ export function ProductDetailPage() {
             <h1>{product.name}</h1>
 
             <div className="product-rating-row">
-              <p className="product-rating">
-                Đánh giá: {ratingAverage.toFixed(1)} / 5 ({ratingCount} đánh
-                giá)
-              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                {renderStarRow(displayRatingAvg)}
+                <span className="product-rating" style={{ fontWeight: 600, color: "#e07b20" }}>
+                  {displayRatingAvg > 0 ? displayRatingAvg.toFixed(1) : "–"}
+                </span>
+                <span className="product-rating" style={{ color: "#6b7280" }}>
+                  ({displayRatingCount} đánh giá)
+                </span>
+              </div>
               <p className="product-sold">Số lượng đã bán: {soldCount}</p>
             </div>
 
@@ -661,6 +680,12 @@ export function ProductDetailPage() {
             </section>
           </div>
         </div>
+
+        {/* ── Đánh giá sản phẩm ── */}
+        <ProductReviews
+          productId={id}
+          onSummaryLoaded={(avg, count) => setLiveRating({ avg, count })}
+        />
 
         <section className="detail-similar-panel">
           <div className="section-headline">

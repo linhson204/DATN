@@ -202,7 +202,34 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        order.setStatus(resolveStatus(request.getStatus()));
+        String newStatus = resolveStatus(request.getStatus());
+        String oldStatus = order.getStatus();
+
+        // Xử lý cộng điểm và thăng hạng khi giao hàng thành công
+        if ("DELIVERED".equals(newStatus) && !"DELIVERED".equals(oldStatus)) {
+            User customer = order.getUser();
+            
+            // 1. Cộng tổng chi tiêu
+            BigDecimal newTotal = customer.getTotalPurchase().add(order.getTotalAmount());
+            customer.setTotalPurchase(newTotal);
+            
+            // 2. Tính điểm (1 điểm = 10,000 VNĐ)
+            int pointsEarned = order.getTotalAmount().divide(new BigDecimal("10000"), java.math.RoundingMode.DOWN).intValue();
+            customer.setPoints(customer.getPoints() + pointsEarned);
+
+            // 3. Thăng hạng thành viên
+            if (newTotal.compareTo(new BigDecimal("10000000")) > 0) {
+                customer.setMembershipLevel(User.MembershipLevel.GOLD);
+            } else if (newTotal.compareTo(new BigDecimal("5000000")) > 0) {
+                customer.setMembershipLevel(User.MembershipLevel.SILVER);
+            } else {
+                customer.setMembershipLevel(User.MembershipLevel.BASIC);
+            }
+
+            userRepository.save(customer);
+        }
+
+        order.setStatus(newStatus);
         Order savedOrder = orderRepository.save(order);
         return orderMapper.toOrderResponse(savedOrder);
     }

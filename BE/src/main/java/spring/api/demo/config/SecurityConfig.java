@@ -83,7 +83,12 @@ public class SecurityConfig {
                         // ========== RECOMMENDATION ENDPOINTS (PUBLIC) ==========
                         .requestMatchers(HttpMethod.GET, "/v1/recommendations/**").permitAll()
 
-                        
+                        // ========== REVIEW ENDPOINTS ==========
+                        .requestMatchers(HttpMethod.GET, "/v1/products/*/reviews", "/v1/products/*/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/products/*/reviews").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/v1/products/*/reviews/**").authenticated()
+
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions

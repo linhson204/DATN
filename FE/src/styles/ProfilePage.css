@@ -1,0 +1,302 @@
+/* ============================================================
+   ProfilePage.css
+   ============================================================ */
+
+.profile-page {
+  display: grid;
+  gap: 1rem;
+}
+
+/* ── Hero card ─────────────────────────────────────────────── */
+
+.profile-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.4rem;
+  padding: 1.4rem 1.6rem;
+}
+
+/* Avatar */
+
+.profile-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3cd3c1 0%, #89f2e1 50%, #33b8a8 100%);
+  color: #062327;
+  font-weight: 800;
+  font-size: 1.8rem;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 20px rgba(60, 211, 193, 0.4);
+  letter-spacing: 0.04em;
+}
+
+/* Membership badge below avatar */
+
+.profile-membership-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  padding: 0.22rem 0.7rem;
+  font-size: 0.73rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.membership-basic {
+  background: rgba(43, 90, 140, 0.08);
+  color: #2b5a8c;
+  border: 1px solid rgba(43, 90, 140, 0.2);
+}
+
+.membership-silver {
+  background: rgba(89, 101, 117, 0.08);
+  color: #596575;
+  border: 1px solid rgba(89, 101, 117, 0.2);
+}
+
+.membership-gold {
+  background: rgba(184, 134, 11, 0.1);
+  color: #b8860b;
+  border: 1px solid rgba(184, 134, 11, 0.25);
+}
+
+.membership-platinum {
+  background: rgba(26, 123, 151, 0.08);
+  color: #1a7b97;
+  border: 1px solid rgba(26, 123, 151, 0.2);
+}
+
+/* Hero info */
+
+.profile-hero-info {
+  flex: 1;
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+}
+
+.profile-name {
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.profile-username {
+  font-size: 0.95rem;
+  margin: 0;
+  color: #475569 !important;
+  font-weight: 500;
+}
+
+.profile-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.profile-role-pill,
+.profile-active-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.role-admin {
+  background: rgba(194, 65, 12, 0.08);
+  color: #c2410c;
+  border: 1px solid rgba(194, 65, 12, 0.2);
+}
+
+.role-customer {
+  background: rgba(15, 118, 110, 0.08);
+  color: #0f766e;
+  border: 1px solid rgba(15, 118, 110, 0.2);
+}
+
+.active-yes {
+  background: rgba(5, 150, 105, 0.08);
+  color: #059669;
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.active-no {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.profile-refresh-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+/* ── Stats row ─────────────────────────────────────────────── */
+
+.profile-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.profile-stat-card {
+  border-radius: var(--radius-md);
+  background: var(--surface-bg);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-main);
+  backdrop-filter: blur(12px);
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.profile-stat-card > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.profile-stat-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  margin: 0;
+  line-height: 1.2;
+  font-family: "Fraunces", serif;
+}
+
+.profile-stat-card small {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ── Info sections ─────────────────────────────────────────── */
+
+.profile-sections-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.profile-info-section {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.profile-section-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+/* Definition list */
+
+.profile-dl {
+  display: grid;
+  gap: 0;
+}
+
+.profile-dl-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(132, 203, 193, 0.1);
+}
+
+.profile-dl-row:last-child {
+  border-bottom: none;
+}
+
+.profile-dl-row dt {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  padding-top: 0.05rem;
+}
+
+.profile-dl-row dd {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-main);
+  text-align: right;
+  word-break: break-all;
+}
+
+.profile-id-text {
+  font-size: 0.72rem !important;
+  color: var(--text-muted) !important;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+/* Membership inline badge */
+
+.membership-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* ── Actions row ───────────────────────────────────────────── */
+
+.profile-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.profile-action-btn {
+  font-size: 0.88rem;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+
+@media (max-width: 760px) {
+  .profile-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-refresh-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .profile-stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-sections-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -8,5 +8,6 @@ export {
   type UpdateProductPayload,
 } from "./productsApi";
 export { recommendationApi } from "./recommendationApi";
+export { reviewsApi } from "./reviewsApi";
 export { shippingApi } from "./shippingApi";
 export { wishlistApi } from "./wishlistApi";

@@ -30,8 +30,6 @@ public class MembershipLevelConverter implements AttributeConverter<User.Members
                 return User.MembershipLevel.SILVER;
             case "gold":
                 return User.MembershipLevel.GOLD;
-            case "platinum":
-                return User.MembershipLevel.PLATINUM;
             default:
                 return User.MembershipLevel.BASIC;
         }

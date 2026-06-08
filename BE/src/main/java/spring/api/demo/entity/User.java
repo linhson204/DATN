@@ -90,8 +90,7 @@ public class User {
     public enum MembershipLevel {
         BASIC("basic"),
         SILVER("silver"), 
-        GOLD("gold"),
-        PLATINUM("platinum");
+        GOLD("gold");
 
         private final String value;
 
