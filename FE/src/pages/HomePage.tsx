@@ -305,19 +305,6 @@ export function HomePage() {
           )}
         </section>
       )}
-
-      <section id="about" className="home-info-block">
-        <h3>Giới thiệu</h3>
-        <p>
-          S and T là thương hiệu tập trung vào trải nghiệm thời trang hiện đại,
-          đơn giản và dễ phối cho mọi phong cách sống.
-        </p>
-      </section>
-
-      <section id="contact" className="home-info-block">
-        <h3>Liên hệ</h3>
-        <p>Email: linhson24032004@gmail.com | Hotline: 0346689326</p>
-      </section>
     </section>
   );
 }

@@ -339,7 +339,7 @@ export function ProductsAdminTab({
 
       <div className="dashboard-panel">
         <div className="panel-header">
-          <h3>📦 Danh sách sản phẩm</h3>
+          <h3>Danh sách sản phẩm</h3>
           <div className="panel-header-actions">
             <form
               onSubmit={handleSearch}

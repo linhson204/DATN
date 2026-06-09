@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ordersApi } from "../api/services";
+import { ordersApi, reviewsApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import type { Order, OrderItem, PageResponse } from "../types/api";
 import { formatCurrency, formatDateTime } from "../utils/format";
 import { Spinner } from "../components/ui/Spinner";
 import { OrderStatusBadge, PaymentStatusBadge } from "../components/ui/OrderBadges";
 import { EmptyState } from "../components/ui/EmptyState";
+import { useAuth } from "../context/AuthContext";
 
 function getOrderCode(orderId: string): string {
   return orderId.slice(0, 8).toUpperCase();
@@ -70,6 +71,7 @@ function OrderItemRow({ item }: { item: OrderItem }) {
 }
 
 export function OrdersPage() {
+  const { user } = useAuth();
   const [page, setPage] = useState(0);
   const [pageData, setPageData] = useState<PageResponse<Order>>({
     items: [],
@@ -81,6 +83,8 @@ export function OrdersPage() {
     hasPrevious: false,
   });
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  // orderIds that still have at least 1 unreviewed product
+  const [pendingReviewIds, setPendingReviewIds] = useState<Set<string>>(new Set());
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +112,38 @@ export function OrdersPage() {
         const response = await ordersApi.listMine(page, 10);
         setPageData(response);
         setExpandedIds(new Set());
+
+        // After loading, check which DELIVERED orders still have unreviewed products
+        if (user) {
+          const deliveredOrders = response.items.filter((o) => o.status === "DELIVERED");
+          const pending = new Set<string>();
+
+          await Promise.allSettled(
+            deliveredOrders.map(async (order) => {
+              // Get unique product ids in this order
+              const productIds = [...new Set(order.items.map((i) => i.productId))];
+              let hasUnreviewed = false;
+
+              await Promise.allSettled(
+                productIds.map(async (productId) => {
+                  if (hasUnreviewed) return;
+                  try {
+                    const reviews = await reviewsApi.list(productId, 0, 50);
+                    const userReviewed = reviews.items.some((r) => r.userId === user.id);
+                    if (!userReviewed) hasUnreviewed = true;
+                  } catch {
+                    // Nếu lỗi, coi như chưa review
+                    hasUnreviewed = true;
+                  }
+                })
+              );
+
+              if (hasUnreviewed) pending.add(order.id);
+            })
+          );
+
+          setPendingReviewIds(pending);
+        }
       } catch (rawError) {
         const apiError = parseApiError(rawError);
         setError(apiError.message);
@@ -117,7 +153,7 @@ export function OrdersPage() {
     };
 
     void load();
-  }, [page]);
+  }, [page, user]);
 
   function toggleExpand(id: string) {
     setExpandedIds((prev) => {
@@ -162,21 +198,18 @@ export function OrdersPage() {
           {/* ── Stats bar ── */}
           <div className="op-stats-bar">
             <div className="op-stat-chip">
-              <span className="op-stat-icon">🧾</span>
               <div>
                 <small>Đơn trong trang</small>
                 <strong>{pageOrderCount}</strong>
               </div>
             </div>
             <div className="op-stat-chip">
-              <span className="op-stat-icon">👗</span>
               <div>
                 <small>Sản phẩm đã đặt</small>
                 <strong>{pageItemCount}</strong>
               </div>
             </div>
             <div className="op-stat-chip">
-              <span className="op-stat-icon">💳</span>
               <div>
                 <small>Tổng thanh toán</small>
                 <strong className="price">{formatCurrency(pageTotalAmount)}</strong>
@@ -194,6 +227,8 @@ export function OrdersPage() {
                 (s, i) => s + i.quantity,
                 0,
               );
+              const isDelivered = order.status === "DELIVERED";
+              const hasPendingReview = pendingReviewIds.has(order.id);
 
               return (
                 <article className="op-card" key={order.id}>
@@ -210,6 +245,14 @@ export function OrdersPage() {
                       <PaymentStatusBadge paymentStatus={order.paymentStatus} />
                     </div>
                   </div>
+
+                  {/* Unreviewed badge */}
+                  {isDelivered && hasPendingReview && (
+                    <div className="op-unreviewed-hint">
+                      <span className="op-unreviewed-dot" />
+                      ⭐ Đơn hàng đã giao — hãy đánh giá sản phẩm của bạn!
+                    </div>
+                  )}
 
                   {/* Thumbnail strip */}
                   <div className="op-thumb-strip">

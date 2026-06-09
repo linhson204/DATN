@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { orderStatuses, ordersApi } from "../../api/services";
+import { paymentOrdersStatus, paymentStatusLabel } from "../../api/services/ordersApi";
 import { parseApiError } from "../../api/helpers";
-import type { Order, OrderStatus, PageResponse } from "../../types/api";
+import type { Order, OrderStatus, PageResponse, PaymentOrderStatus } from "../../types/api";
 import { formatCurrency, formatDateTime } from "../../utils/format";
 import { IconOrder } from "./DashboardIcons";
 import { statusLabel } from "./dashboardTypes";
@@ -24,6 +25,7 @@ export function OrdersAdminTab() {
   const [draftStatus, setDraftStatus] = useState<Record<string, OrderStatus>>(
     {},
   );
+  const [draftPaymentStatus, setDraftPaymentStatus] = useState<Record<string, PaymentOrderStatus>>({});
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -56,6 +58,10 @@ export function OrdersAdminTab() {
           res.items.map((o) => [o.id, o.status]),
         ) as Record<string, OrderStatus>;
         setDraftStatus(init);
+        const initPayment = Object.fromEntries(
+          res.items.map((o) => [o.id, (o.paymentStatus || "PENDING") as PaymentOrderStatus]),
+        ) as Record<string, PaymentOrderStatus>;
+        setDraftPaymentStatus(initPayment);
       } catch (raw) {
         setError(parseApiError(raw).message);
       } finally {
@@ -85,6 +91,23 @@ export function OrdersAdminTab() {
       await ordersApi.updateStatus(orderId, next);
       await load(pageData.page);
       setNotice(`Đã cập nhật trạng thái đơn #${orderId.slice(0, 8)}.`);
+    } catch (raw) {
+      setError(parseApiError(raw).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const savePaymentStatus = async (orderId: string) => {
+    const next = draftPaymentStatus[orderId];
+    if (!next) return;
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await ordersApi.updatePaymentStatus(orderId, next);
+      await load(pageData.page);
+      setNotice(`Đã cập nhật thanh toán đơn #${orderId.slice(0, 8)}.`);
     } catch (raw) {
       setError(parseApiError(raw).message);
     } finally {
@@ -202,8 +225,8 @@ export function OrdersAdminTab() {
               <th>Khách hàng</th>
               <th>Địa chỉ</th>
               <th>Tổng tiền</th>
-              <th>T.Toán</th>
-              <th>Trạng thái</th>
+              <th>Giao hàng</th>
+              <th>Thanh toán</th>
               <th>Ngày tạo</th>
               <th>Cập nhật</th>
             </tr>
@@ -270,13 +293,7 @@ export function OrdersAdminTab() {
                   <td>
                     <strong>{formatCurrency(order.totalAmount)}</strong>
                   </td>
-                  <td>
-                    <span
-                      className={`db-badge db-badge-${(order.paymentStatus || "pending").toLowerCase()}`}
-                    >
-                      {order.paymentMethod}
-                    </span>
-                  </td>
+                  {/* ── Delivery status select ── */}
                   <td>
                     <select
                       className="db-status-select"
@@ -295,20 +312,53 @@ export function OrdersAdminTab() {
                       ))}
                     </select>
                   </td>
-                  <td style={{ color: "#64748b", fontSize: "0.78rem" }}>
+                  {/* ── Payment status select ── */}
+                  <td>
+                    <select
+                      className="db-status-select"
+                      value={draftPaymentStatus[order.id] || order.paymentStatus || "PENDING"}
+                      onChange={(e) =>
+                        setDraftPaymentStatus((prev) => ({
+                          ...prev,
+                          [order.id]: e.target.value as PaymentOrderStatus,
+                        }))
+                      }
+                    >
+                      {paymentOrdersStatus.map((s: PaymentOrderStatus) => (
+                        <option key={s} value={s}>
+                          {paymentStatusLabel[s]}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td style={{ color: "#0f0f0fff", fontSize: "0.78rem" }}>
                     {formatDateTime(order.createdAt)}
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="db-btn db-btn-primary db-btn-sm"
-                      disabled={
-                        draftStatus[order.id] === order.status || saving
-                      }
-                      onClick={() => void saveStatus(order.id)}
-                    >
-                      Lưu
-                    </button>
+                    <div style={{ display: "flex", gap: "0.4rem", flexDirection: "column" }}>
+                      <button
+                        type="button"
+                        className="db-btn db-btn-primary db-btn-sm"
+                        disabled={
+                          draftStatus[order.id] === order.status || saving
+                        }
+                        onClick={() => void saveStatus(order.id)}
+                        title="Lưu trạng thái giao hàng"
+                      >
+                        Lưu GH
+                      </button>
+                      <button
+                        type="button"
+                        className="db-btn db-btn-outline db-btn-sm"
+                        disabled={
+                          draftPaymentStatus[order.id] === (order.paymentStatus as PaymentOrderStatus) || saving
+                        }
+                        onClick={() => void savePaymentStatus(order.id)}
+                        title="Lưu trạng thái thanh toán"
+                      >
+                        Lưu TT
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

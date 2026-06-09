@@ -29,16 +29,16 @@ export function CheckoutPage() {
   const [suggestions, setSuggestions] = useState<GoongLocationSuggestion[]>([]);
   const [isSuggestOpen, setIsSuggestOpen] = useState(false);
   const [isSuggestLoading, setIsSuggestLoading] = useState(false);
-  const [addressInput, setAddressInput] = useState("");
+  const [addressInput, setAddressInput] = useState(user?.address ?? "");
   const addressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const addressWrapperRef = useRef<HTMLDivElement>(null);
   const justSelectedRef = useRef(false); // skip debounce when picking from dropdown
 
   const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo>({
-    recipientName: "",
-    email: "",
-    phoneNumber: "",
-    address: "",
+    recipientName: user?.name ?? "",
+    email: user?.email ?? "",
+    phoneNumber: user?.phone ?? "",
+    address: user?.address ?? "",
     deliveryMethod: "Tiêu chuẩn",
     deliveryTime: "Ban ngày",
     deliveryInstructions: "",

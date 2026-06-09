@@ -287,7 +287,7 @@ export function ProductReviews({ productId, onSummaryLoaded }: ProductReviewsPro
           className="btn btn-outline reviews-write-btn"
           onClick={() => setFormOpen(true)}
         >
-          ✏️ Viết đánh giá
+          Viết đánh giá
         </button>
       )}
 

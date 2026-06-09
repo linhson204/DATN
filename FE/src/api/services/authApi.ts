@@ -5,6 +5,7 @@ import type {
   LoginPayload,
   LoginResponse,
   RegisterPayload,
+  UpdateProfilePayload,
   UserProfile,
 } from "../../types/api";
 
@@ -21,6 +22,11 @@ export const authApi = {
 
   async me(): Promise<UserProfile> {
     const response = await http.get<unknown>("/v1/users/me");
+    return unwrapApiResponse<UserProfile>(response.data);
+  },
+
+  async updateMe(payload: UpdateProfilePayload): Promise<UserProfile> {
+    const response = await http.put<unknown>("/v1/users/me", payload);
     return unwrapApiResponse<UserProfile>(response.data);
   },
 

@@ -15,6 +15,7 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { WishlistPage } from "./pages/WishlistPage";
+import { AboutPage } from "./pages/AboutPage";
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
 
       <Route path="/" element={<AppLayout />}>
         <Route index element={<HomePage />} />
+        <Route path="about" element={<AboutPage />} />
         <Route path="auth" element={<AuthPage />} />
         <Route path="oauth2/callback" element={<OAuthCallbackPage />} />
 

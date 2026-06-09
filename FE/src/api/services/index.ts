@@ -1,6 +1,6 @@
 export { authApi } from "./authApi";
 export { cartApi } from "./cartApi";
-export { ordersApi, orderStatuses, paymentOrdersStatus } from "./ordersApi";
+export { ordersApi, orderStatuses, paymentOrdersStatus, paymentStatusLabel } from "./ordersApi";
 export { productCategoriesApi } from "./productCategoriesApi";
 export {
   productsApi,

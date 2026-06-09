@@ -1,12 +1,12 @@
 package spring.api.demo.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
+import spring.api.demo.dto.user.request.UpdateUserRequest;
 import spring.api.demo.dto.user.response.UserResponse;
 import spring.api.demo.resource.SuccessResource;
 import spring.api.demo.service.UserService;
@@ -21,9 +21,17 @@ public class UserController {
     @GetMapping("/users/me")
     public ResponseEntity<SuccessResource<UserResponse>> getMe() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println("Authenticated user's email: " + email);
         UserResponse userResponse = userService.getMe(email);
         return ResponseEntity.ok(new SuccessResource<>("Lấy thông tin người dùng thành công", userResponse));
     }
 
+    @PutMapping("/users/me")
+    public ResponseEntity<SuccessResource<UserResponse>> updateMe(
+            @Valid @RequestBody UpdateUserRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserResponse userResponse = userService.updateMe(email, request);
+        return ResponseEntity.ok(new SuccessResource<>("Cập nhật thông tin thành công", userResponse));
+    }
+
 }
+

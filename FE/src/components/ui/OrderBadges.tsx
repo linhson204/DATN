@@ -12,24 +12,11 @@ export const ORDER_STATUS_LABEL: Record<Order["status"], string> = {
   CANCELLED: "Đã hủy",
 };
 
-export const ORDER_STATUS_ICON: Record<Order["status"], string> = {
-  PENDING: "⏳",
-  CONFIRMED: "✅",
-  SHIPPING: "🚚",
-  DELIVERED: "📦",
-  CANCELLED: "✖",
-};
 
 export const PAYMENT_STATUS_LABEL: Record<string, string> = {
   PENDING: "Chưa thanh toán",
   PAID: "Đã thanh toán",
   UNPAID: "Chưa thanh toán",
-};
-
-export const PAYMENT_STATUS_ICON: Record<string, string> = {
-  PENDING: "💳",
-  PAID: "✔",
-  UNPAID: "💳",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,7 +37,6 @@ interface OrderStatusBadgeProps {
 export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   return (
     <span className={`status status-${status.toLowerCase()}`}>
-      {ORDER_STATUS_ICON[status]}&nbsp;
       {ORDER_STATUS_LABEL[status]}
     </span>
   );
@@ -73,7 +59,6 @@ export function PaymentStatusBadge({ paymentStatus }: PaymentStatusBadgeProps) {
     <span
       className={`payment-status payment-status-${status.toLowerCase()}`}
     >
-      {PAYMENT_STATUS_ICON[status] ?? "💳"}&nbsp;
       {PAYMENT_STATUS_LABEL[status] ?? "Chưa thanh toán"}
     </span>
   );

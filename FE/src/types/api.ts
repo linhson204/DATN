@@ -25,6 +25,14 @@ export type UserProfile = {
   isActive?: boolean | null;
 };
 
+export type UpdateProfilePayload = {
+  fullName?: string;
+  gender?: string;
+  birthYear?: number;
+  phoneNumber?: string;
+  address?: string;
+};
+
 export type LoginResponse = {
   token: string;
   refreshToken: string;

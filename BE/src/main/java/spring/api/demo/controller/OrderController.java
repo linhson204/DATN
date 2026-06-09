@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import spring.api.demo.dto.common.PageResponse;
 import spring.api.demo.dto.order.request.OrderCreateRequest;
 import spring.api.demo.dto.order.request.OrderStatusUpdateRequest;
+import spring.api.demo.dto.order.request.OrderPaymentStatusUpdateRequest;
 import spring.api.demo.dto.order.response.OrderResponse;
 import spring.api.demo.resource.SuccessResource;
 import spring.api.demo.service.OrderService;
@@ -74,5 +75,15 @@ public class OrderController {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         OrderResponse response = orderService.updateOrderStatus(email, orderId, request);
         return ResponseEntity.ok(new SuccessResource<>("Cập nhật trạng thái đơn hàng thành công", response));
+    }
+
+    @PutMapping("/{orderId}/payment-status")
+    public ResponseEntity<SuccessResource<OrderResponse>> updatePaymentStatus(
+            @PathVariable UUID orderId,
+            @Valid @RequestBody OrderPaymentStatusUpdateRequest request
+    ) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        OrderResponse response = orderService.updatePaymentStatus(email, orderId, request);
+        return ResponseEntity.ok(new SuccessResource<>("Cập nhật trạng thái thanh toán thành công", response));
     }
 }

@@ -12,6 +12,7 @@ import spring.api.demo.dto.payment.response.ZaloPayCreatePaymentResult;
 import spring.api.demo.entity.CartItem;
 import spring.api.demo.dto.order.request.OrderCreateRequest;
 import spring.api.demo.dto.order.request.OrderStatusUpdateRequest;
+import spring.api.demo.dto.order.request.OrderPaymentStatusUpdateRequest;
 import spring.api.demo.dto.order.response.OrderResponse;
 import spring.api.demo.entity.DeliveryInfo;
 import spring.api.demo.entity.Order;
@@ -42,6 +43,11 @@ public class OrderService {
             "SHIPPING",
             "DELIVERED",
             "CANCELLED"
+    );
+    private static final Set<String> VALID_PAYMENT_STATUS = Set.of(
+            "PENDING",
+            "PAID",
+            "UNPAID"
     );
     private static final Set<String> VALID_PAYMENT_METHOD = Set.of(
             "COD",
@@ -230,6 +236,24 @@ public class OrderService {
         }
 
         order.setStatus(newStatus);
+        Order savedOrder = orderRepository.save(order);
+        return orderMapper.toOrderResponse(savedOrder);
+    }
+
+    @Transactional
+    public OrderResponse updatePaymentStatus(String email, UUID orderId, OrderPaymentStatusUpdateRequest request) {
+        User user = getUserByEmail(email);
+        validateAdmin(user);
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        String newPaymentStatus = request.getPaymentStatus().trim().toUpperCase();
+        if (!VALID_PAYMENT_STATUS.contains(newPaymentStatus)) {
+            throw new AppException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+
+        order.setPaymentStatus(newPaymentStatus);
         Order savedOrder = orderRepository.save(order);
         return orderMapper.toOrderResponse(savedOrder);
     }

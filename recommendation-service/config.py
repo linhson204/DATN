@@ -65,14 +65,13 @@ class Settings(BaseSettings):
     # khác nhau của người dùng.
     quick_view_weight: float = Field(default=0.25, alias="QUICK_VIEW_WEIGHT")
     detail_view_weight: float = Field(default=0.5, alias="DETAIL_VIEW_WEIGHT")
-    deep_view_weight: float = Field(default=1.0, alias="DEEP_VIEW_WEIGHT")
-    wishlist_weight: float = Field(default=2.0, alias="WISHLIST_WEIGHT")
-    order_weight_scale: float = Field(default=5.0, alias="ORDER_WEIGHT_SCALE")
-    max_interaction_weight: float = Field(default=15.0, alias="MAX_INTERACTION_WEIGHT")
+    deep_view_weight: float = Field(default=0.75, alias="DEEP_VIEW_WEIGHT")
+    wishlist_weight: float = Field(default=1.5, alias="WISHLIST_WEIGHT")
+    order_weight_scale: float = Field(default=3.0, alias="ORDER_WEIGHT_SCALE")
+    max_interaction_weight: float = Field(default=20.0, alias="MAX_INTERACTION_WEIGHT")
 
     '''Các tham số liên quan đến việc tạo tín hiệu tương tác dựa trên các sản phẩm 
     được xem cùng nhau (co-view).'''
-    coview_weight: float = Field(default=1.0, alias="COVIEW_WEIGHT")
     fallback_trending_days: int = Field(default=7, alias="FALLBACK_TRENDING_DAYS")
     fallback_top_n: int = Field(default=50, alias="FALLBACK_TOP_N")
 
@@ -91,11 +90,11 @@ class Settings(BaseSettings):
 
     '''Cấu hình tính năng boost theo mùa (Season Boosting) tại inference-time.'''
     enable_season_boost: bool = Field(default=True, alias="ENABLE_SEASON_BOOST")
-    season_boost_weight: float = Field(default=1.0, alias="SEASON_BOOST_WEIGHT")
+    season_boost_weight: float = Field(default=0.75, alias="SEASON_BOOST_WEIGHT")
 
     '''Cấu hình tăng điểm theo mức độ khớp giới tính giữa user và sản phẩm.'''
     enable_gender_match_boost: bool = Field(default=True, alias="ENABLE_GENDER_MATCH_BOOST")
-    gender_match_boost_weight: float = Field(default=1.0, alias="GENDER_MATCH_BOOST_WEIGHT")
+    gender_match_boost_weight: float = Field(default=0.75, alias="GENDER_MATCH_BOOST_WEIGHT")
 
     # Cấu hình CORS cho frontend gọi API từ trình duyệt.
     cors_allow_origins: list[str] = Field(

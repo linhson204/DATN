@@ -38,6 +38,17 @@ def _view_weight_map() -> dict[str, float]:
     }
 
 
+def _review_weight_map() -> dict[int, float]:
+    """Trả về trọng số cho từng mức sao review theo thang mới."""
+    return {
+        5: 2.0,
+        4: 1.0,
+        3: 0.0,
+        2: -1.0,
+        1: -2.0,
+    }
+
+
 def extract_view_interactions(engine: Engine, lookback_days: Optional[int] = None) -> pd.DataFrame:
     """
     Trích xuất dữ liệu tương tác xem sản phẩm (product_view_log) từ database.
@@ -193,15 +204,14 @@ def extract_review_interactions(engine: Engine, lookback_days: Optional[int] = N
     frames: list[pd.DataFrame] = []
 
     if not reviews.empty:
-        RATING_WEIGHT_MAP = {5: 5.0, 4: 3.0, 3: 1.0, 2: 0.0, 1: -1.0}
-        reviews["weight"] = reviews["rating"].map(RATING_WEIGHT_MAP)
+        reviews["weight"] = reviews["rating"].map(_review_weight_map())
         reviews = reviews[reviews["weight"] != 0.0].copy()  # bỏ 2 sao
         reviews["signal"] = "REVIEW"
         if not reviews.empty:
             frames.append(reviews[["user_id", "product_id", "weight", "created_at", "signal"]])
 
     if not no_review.empty:
-        no_review["weight"] = 5.0
+        no_review["weight"] = 1.5  # Trọng số cho đơn hàng không review (implicit positive)
         no_review["signal"] = "REVIEW_IMPLICIT"
         frames.append(no_review[["user_id", "product_id", "weight", "created_at", "signal"]])
 

@@ -9,6 +9,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "../context/AuthContext";
 import { IconAdmin, IconCart, IconHeart, IconUser } from "./icons/AppIcons";
+import { AppFooter } from "./AppFooter";
 
 
 export function AppLayout() {
@@ -109,12 +110,12 @@ export function AppLayout() {
           >
             Sản phẩm
           </NavLink>
-          <a href="/#about" className="nav-link">
+          <NavLink
+            to="/about"
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+          >
             Giới thiệu
-          </a>
-          <a href="/#contact" className="nav-link">
-            Liên hệ
-          </a>
+          </NavLink>
         </nav>
 
         <div className="header-actions">
@@ -237,6 +238,8 @@ export function AppLayout() {
       <main className="page-frame">
         <Outlet />
       </main>
+
+      <AppFooter />
 
       <ToastContainer
         position="bottom-right"

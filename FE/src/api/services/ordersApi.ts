@@ -27,6 +27,12 @@ export const paymentOrdersStatus: PaymentOrderStatus[] = [
   "UNPAID"
 ];
 
+export const paymentStatusLabel: Record<PaymentOrderStatus, string> = {
+  PENDING: "Chờ TT",
+  PAID: "Đã TT",
+  UNPAID: "Chưa TT",
+};
+
 export const ordersApi = {
   async create(payload: CreateOrderPayload): Promise<Order> {
     const response = await http.post<unknown>("/v1/orders", payload);
@@ -73,6 +79,16 @@ export const ordersApi = {
   ): Promise<ApiMessage> {
     const response = await http.put<unknown>(`/v1/orders/${orderId}/status`, {
       status,
+    });
+    return unwrapApiResponse<ApiMessage>(response.data);
+  },
+
+  async updatePaymentStatus(
+    orderId: string,
+    paymentStatus: PaymentOrderStatus,
+  ): Promise<ApiMessage> {
+    const response = await http.put<unknown>(`/v1/orders/${orderId}/payment-status`, {
+      paymentStatus,
     });
     return unwrapApiResponse<ApiMessage>(response.data);
   },
