@@ -11,7 +11,7 @@
 
 .home-hero {
   border-radius: 0;
-  min-height: 530px;
+  min-height: 450px;
   position: relative;
   overflow: hidden;
   border: 1px solid #e2e3e7;
@@ -32,8 +32,8 @@
 
 .hero-overlay h2 {
   margin: 0 auto;
-  max-width: 880px;
-  font-size: clamp(2rem, 4.8vw, 4.05rem);
+  max-width: 980px;
+  font-size: clamp(2rem, 4.2vw, 4.05rem);
   line-height: 1.1;
   color: #ffffff;
   font-weight: 700;
@@ -41,10 +41,10 @@
 
 .hero-overlay p {
   margin: 1rem auto 0;
-  max-width: 820px;
+  max-width: 700px;
   color: #f6f7f9;
   font-size: clamp(1rem, 1.8vw, 1.85rem);
-  line-height: 1.4;
+  line-height: 1.6;
 }
 
 .hero-actions {
@@ -59,7 +59,7 @@
   min-width: 188px;
   padding: 0.88rem 1.35rem;
   font-size: 1.05rem;
-  background: #4d89dd;
+  background: #86b8ff;
 }
 
 .hero-btn-ghost {

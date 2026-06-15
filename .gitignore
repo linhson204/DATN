@@ -76,7 +76,6 @@ __pycache__/
 # Environments
 .venv/
 .venv-wsl/
-env/
 venv/
 
 # Jupyter Notebook
@@ -91,5 +90,6 @@ recommendation-service/models/saved/*
 recommendation-service/*.log
 recommendation-service/tmp_train_log.txt
 
-
+*.properties
 *.md
+.env
