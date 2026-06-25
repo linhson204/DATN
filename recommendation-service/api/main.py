@@ -131,6 +131,8 @@ def recommend_for_user(
             gender_match_boost_weight=(
                 settings.gender_match_boost_weight if settings.enable_gender_match_boost else 0.0
             ),
+            order_similarity_top_n=settings.order_similarity_top_n,
+            order_similarity_boost_weight=settings.order_similarity_boost_weight,
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

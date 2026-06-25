@@ -380,11 +380,11 @@ export function AuthPage() {
                 
                 <div style={{ textAlign: "center", marginTop: "1rem" }}>
                    {countdown > 0 ? (
-                      <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.9rem" }}>Gửi lại sau {countdown}s</span>
+                      <span style={{ color: "#8aacb8", fontSize: "0.9rem" }}>Gửi lại sau {countdown}s</span>
                    ) : (
                       <button 
                          type="button" 
-                         style={{ background: "transparent", border: "none", color: "#60b4ff", cursor: "pointer", fontSize: "0.9rem", fontWeight: "600" }}
+                         style={{ background: "transparent", border: "none", color: "#20b8a6", cursor: "pointer", fontSize: "0.9rem", fontWeight: "700" }}
                          onClick={(e) => void handleSendOtpForgotPassword(e)}
                          disabled={isSubmitting}
                       >
@@ -505,7 +505,7 @@ export function AuthPage() {
               <div style={{ textAlign: "right" }}>
                 <button
                   type="button"
-                  style={{ background: "transparent", border: "none", color: "#60b4ff", fontSize: "0.88rem", cursor: "pointer", padding: "0.3rem 0" }}
+                  style={{ background: "transparent", border: "none", color: "#20b8a6", fontSize: "0.88rem", cursor: "pointer", padding: "0.3rem 0", fontWeight: "700" }}
                   onClick={() => setForgotPasswordStep("email")}
                 >
                   Quên mật khẩu?
@@ -652,7 +652,7 @@ export function AuthPage() {
 
             <div className="otp-countdown">
               {otpCountdown > 0 ? (
-                <span>Gửi lại mã sau <strong style={{ color: "#60b4ff" }}>{otpCountdown}s</strong></span>
+                <span style={{ color: "#8aacb8", fontSize: "0.88rem" }}>Gửi lại mã sau <strong style={{ color: "#20b8a6" }}>{otpCountdown}s</strong></span>
               ) : (
                 <button
                   className="otp-resend-btn"

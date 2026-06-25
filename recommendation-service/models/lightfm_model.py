@@ -13,6 +13,7 @@ from lightfm import LightFM
 from lightfm.data import Dataset
 from scipy import sparse
 
+from config import settings
 from data.season import ALL_SEASONS, get_current_season, get_adjacent_seasons
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class LightFMRecommender:
         self.user_id_map: dict[str, int] = {}
         self.item_id_map: dict[str, int] = {}
         self._index_to_item: dict[int, str] = {}
+        self.user_order_history: dict[str, list[str]] = {}
         # Mapping product_id -> danh sách mùa, dùng cho season boosting tại inference-time
         self.item_seasons: dict[str, list[str]] = {}
         # Mapping product_id -> target gender và user_id -> gender để boost khi khớp giới tính
@@ -145,6 +147,7 @@ class LightFMRecommender:
         self.interactions_csr = interactions_csr
         self.user_id_map, _, self.item_id_map, _ = dataset.mapping()
         self._index_to_item = {idx: item_id for item_id, idx in self.item_id_map.items()}
+        self.user_order_history = self._build_order_history(interactions)
         self.item_target_genders = self._extract_item_gender_map(item_tuples)
         self.user_genders = self._extract_user_gender_map(user_tuples)
 
@@ -163,6 +166,7 @@ class LightFMRecommender:
 
     @staticmethod
     def _normalize_gender(value: object) -> Optional[str]:
+        """Chuẩn hóa gender về 'MALE', 'FEMALE' hoặc 'UNISEX'"""
         if value is None:
             return None
 
@@ -210,6 +214,7 @@ class LightFMRecommender:
 
     @classmethod
     def _extract_item_gender_map(cls, item_tuples: Iterable[tuple[str, list[str]]]) -> dict[str, str]:
+        """Xây dựng mapping product_id -> gender từ item_feature_tuples"""
         mapping: dict[str, str] = {}
         for item_id, features in item_tuples:
             for feature in features:
@@ -223,6 +228,7 @@ class LightFMRecommender:
 
     @classmethod
     def _extract_user_gender_map(cls, user_tuples: Iterable[tuple[str, list[str]]]) -> dict[str, str]:
+        """Xây dựng mapping user_id -> gender từ user_feature_tuples"""
         mapping: dict[str, str] = {}
         for user_id, features in user_tuples:
             for feature in features:
@@ -239,6 +245,64 @@ class LightFMRecommender:
         if explicit:
             return explicit
         return self.user_genders.get(str(user_id))
+
+    @staticmethod
+    def _dedupe_preserve_order(values: Sequence[str]) -> list[str]:
+        """Loại bỏ các giá trị trùng lặp trong danh sách nhưng vẫn giữ nguyên thứ tự"""
+        seen: set[str] = set()
+        result: list[str] = []
+        for value in values:
+            token = str(value)
+            if not token or token in seen:
+                continue
+            seen.add(token)
+            result.append(token)
+        return result
+
+    def _build_order_history(self, interactions: pd.DataFrame) -> dict[str, list[str]]:
+        """Xây dựng order history cho từng user"""
+        required_cols = {"user_id", "product_id"}
+        if interactions.empty or not required_cols.issubset(interactions.columns):
+            return {}
+
+        order_rows = interactions.copy()
+        order_rows["user_id"] = order_rows["user_id"].astype(str)
+        order_rows["product_id"] = order_rows["product_id"].astype(str)
+
+        if "signal" in order_rows.columns:
+            order_rows["signal"] = order_rows["signal"].astype(str).str.upper()
+            order_rows = order_rows[order_rows["signal"] == "ORDER"]
+
+        if order_rows.empty:
+            return {}
+
+        if "created_at" in order_rows.columns:
+            order_rows["created_at"] = pd.to_datetime(order_rows["created_at"], errors="coerce")
+            order_rows = order_rows.sort_values("created_at", ascending=False, kind="stable")
+
+        history: dict[str, list[str]] = {}
+        for user_id, group in order_rows.groupby("user_id", sort=False):
+            history[str(user_id)] = self._dedupe_preserve_order(group["product_id"].tolist())
+        return history
+
+    def _order_similarity_boosts(
+        self,
+        ordered_item_ids: Sequence[str],
+        top_n: int,
+        boost_weight: float,
+    ) -> dict[str, float]:
+        """Tính order similarity boost cho từng sản phẩm"""
+        if top_n <= 0 or boost_weight <= 0 or not ordered_item_ids:
+            return {}
+
+        ordered_set = {str(product_id) for product_id in ordered_item_ids}
+        boosts: dict[str, float] = {}
+        for source_product_id in ordered_set:
+            for similar_product_id, _ in self.similar_items(source_product_id, top_n=top_n):
+                if similar_product_id in ordered_set:
+                    continue
+                boosts[similar_product_id] = boosts.get(similar_product_id, 0.0) + float(boost_weight)
+        return boosts
 
     def _infer_gender_maps_from_feature_matrices(self) -> None:
         """
@@ -305,6 +369,8 @@ class LightFMRecommender:
         user_gender: str | None = None,
         season_boost_weight: float = 0.0,
         gender_match_boost_weight: float = 0.0,
+        order_similarity_top_n: int | None = None,
+        order_similarity_boost_weight: float | None = None,
     ) -> list[tuple[str, float]]:
         """
         Chấm điểm (Score) một danh sách cụ thể các ứng viên sản phẩm cho một user.
@@ -332,7 +398,13 @@ class LightFMRecommender:
 
         known_item_ids: list[str] = []
         item_indices: list[int] = []
+        ordered_item_ids = self.user_order_history.get(str(user_id), [])
+        purchased_set = set(ordered_item_ids)
+        purchased_penalty = float(settings.order_purchased_item_penalty)
         for product_id in deduped_ids:
+            if product_id in purchased_set:
+                scores[product_id] = purchased_penalty
+                continue
             item_index = self.item_id_map.get(product_id)
             if item_index is not None:
                 known_item_ids.append(product_id)
@@ -369,6 +441,9 @@ class LightFMRecommender:
             adjacent = get_adjacent_seasons(current_season)
             boosted: dict[str, float] = {}
             for pid, raw_score in scores.items():
+                if pid in purchased_set:
+                    boosted[pid] = raw_score
+                    continue
                 item_seasons = self.item_seasons.get(pid, [])
                 if current_season in item_seasons:
                     boosted[pid] = raw_score + offset        # đúng mùa → cộng
@@ -395,6 +470,9 @@ class LightFMRecommender:
 
             boosted: dict[str, float] = {}
             for pid, raw_score in scores.items():
+                if pid in purchased_set:
+                    boosted[pid] = raw_score
+                    continue
                 if self.item_target_genders.get(pid) == resolved_gender:
                     boosted[pid] = raw_score + offset
                 else:
@@ -416,6 +494,8 @@ class LightFMRecommender:
         user_gender: str | None = None,
         season_boost_weight: float = 0.0,
         gender_match_boost_weight: float = 0.0,
+        order_similarity_top_n: int | None = None,
+        order_similarity_boost_weight: float | None = None,
     ) -> list[tuple[str, float]]:
         """
         Gợi ý top_n sản phẩm phù hợp nhất cho người dùng (Personalized Recommendations).
@@ -425,11 +505,12 @@ class LightFMRecommender:
         Tham số:
             user_id: Mã định danh của người dùng (External UUID).
             top_n: Số lượng sản phẩm trả về.
-            exclude_interacted: Gán bằng True để loại bỏ những sản phẩm người dùng đã xem/mua (tương tác)
-                trong file log (interactions_csr) nhằm tránh gợi ý lại các đồ cũ.
+            exclude_interacted: Gán bằng True để loại bỏ những sản phẩm người dùng đã mua.
             user_gender: Giới tính user truyền từ API (nếu có) để ưu tiên sản phẩm cùng giới.
             season_boost_weight: Trọng số boost theo mùa (0 = tắt, mặc định lấy từ settings).
             gender_match_boost_weight: Trọng số boost theo mức độ khớp giới tính.
+            order_similarity_top_n: Số sản phẩm tương tự lấy cho mỗi sản phẩm đã mua.
+            order_similarity_boost_weight: Điểm cộng cho mỗi sản phẩm tương tự.
         """
         self._require_fitted()
 
@@ -450,10 +531,30 @@ class LightFMRecommender:
             num_threads=self.num_threads,
         )
 
-        # Loại bỏ những sản phẩm đã tương tác nếu exclude_interacted=True và interactions_csr có sẵn
-        if exclude_interacted and self.interactions_csr is not None:
-            user_interactions = self.interactions_csr[user_index].toarray().ravel()
-            predictions[user_interactions > 0] = -np.inf
+        ordered_item_ids = self.user_order_history.get(str(user_id), [])
+        purchased_set = set(ordered_item_ids)
+        purchased_penalty = float(settings.order_purchased_item_penalty)
+        if exclude_interacted and ordered_item_ids:
+            for product_id in ordered_item_ids:
+                item_idx = self.item_id_map.get(product_id)
+                if item_idx is not None:
+                    predictions[item_idx] = purchased_penalty
+
+        similarity_top_n = int(order_similarity_top_n or settings.order_similarity_top_n)
+        similarity_boost_weight = float(
+            order_similarity_boost_weight if order_similarity_boost_weight is not None else settings.order_similarity_boost_weight
+        )
+        if ordered_item_ids:
+            boosts = self._order_similarity_boosts(
+                ordered_item_ids,
+                top_n=similarity_top_n,
+                boost_weight=similarity_boost_weight,
+            )
+            for product_id, boost in boosts.items():
+                item_idx = self.item_id_map.get(product_id)
+                if item_idx is None or product_id in purchased_set or not np.isfinite(predictions[item_idx]):
+                    continue
+                predictions[item_idx] += boost
 
         # --- Season Boosting: cộng/trừ offset thay vì nhân để đúng với score âm ---
         if season_boost_weight > 0 and self.item_seasons:
@@ -464,6 +565,8 @@ class LightFMRecommender:
             offset = season_boost_weight * score_std
             adjacent = get_adjacent_seasons(current_season)
             for item_id, item_idx in self.item_id_map.items():
+                if item_id in purchased_set:
+                    continue
                 if not np.isfinite(predictions[item_idx]):
                     continue
                 item_seasons = self.item_seasons.get(item_id, [])
@@ -486,6 +589,8 @@ class LightFMRecommender:
             score_std = float(np.std(finite_vals)) if finite_vals.size > 1 else 1.0
             offset = gender_match_boost_weight * score_std
             for item_id, item_idx in self.item_id_map.items():
+                if item_id in purchased_set:
+                    continue
                 if not np.isfinite(predictions[item_idx]):
                     continue
                 if self.item_target_genders.get(item_id) == resolved_gender:
@@ -571,6 +676,7 @@ class LightFMRecommender:
         joblib.dump(self.item_features, output_dir / "item_features.joblib")
         joblib.dump(self.user_features, output_dir / "user_features.joblib")
         joblib.dump(self.interactions_csr, output_dir / "interactions.joblib")
+        joblib.dump(self.user_order_history, output_dir / "user_order_history.joblib")
 
         with (output_dir / "user_id_map.json").open("w", encoding="utf-8") as user_fp:
             json.dump(self.user_id_map, user_fp, ensure_ascii=True)
@@ -624,6 +730,18 @@ class LightFMRecommender:
             interactions_csr = joblib.load(interactions_path)
         else:
             logger.warning("interactions.joblib not found — interacted-item filtering disabled")
+
+        user_order_history: dict[str, list[str]] = {}
+        order_history_path = output_dir / "user_order_history.joblib"
+        if order_history_path.exists():
+            raw_order_history = joblib.load(order_history_path)
+            user_order_history = {
+                str(user_id): [str(product_id) for product_id in product_ids]
+                for user_id, product_ids in raw_order_history.items()
+            }
+            logger.info("Order history loaded: %d users", len(user_order_history))
+        else:
+            logger.info("user_order_history.joblib not found — order-based exclusion disabled")
 
         with (output_dir / "user_id_map.json").open("r", encoding="utf-8") as user_fp:
             user_id_map = {key: int(value) for key, value in json.load(user_fp).items()}

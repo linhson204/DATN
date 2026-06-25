@@ -96,9 +96,13 @@ public class ProductController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody (required = false) ProductLodViewRequest durationSeconds
     ) {
+        // Bỏ qua nếu người dùng chưa đăng nhập
+        if (userDetails == null) {
+            return ResponseEntity.ok(new MessageResource("Chưa đăng nhập, bỏ qua ghi nhận lượt xem"));
+        }
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        if(durationSeconds.getDurationSeconds() <= 6) {
+        if (durationSeconds == null || durationSeconds.getDurationSeconds() <= 6) {
             return ResponseEntity.ok(new MessageResource("Thời gian xem quá ngắn, không ghi nhận lượt xem"));
         }
         productViewLogService.logView(user.getId(), id, viewType, durationSeconds.getDurationSeconds());

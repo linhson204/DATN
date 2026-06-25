@@ -1,8 +1,8 @@
 /* ============================================================
-   AuthPage – Premium full-screen redesign
+   AuthPage – Light / White theme
    ============================================================ */
 
-/* ── Fullscreen wrapper (overrides the page-frame container) ── */
+/* ── Fullscreen wrapper ── */
 .auth-fullscreen {
   position: fixed;
   inset: 0;
@@ -12,11 +12,11 @@
   z-index: 60;
 }
 
-/* ── Animated gradient background ── */
+/* ── Animated background – sáng, trắng tinh tế ── */
 .auth-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #2c3e45, #537385, #3c4750);
+  background-color: #f5fbfa;
   overflow: hidden;
   z-index: 0;
 }
@@ -24,47 +24,47 @@
 .auth-bg::before {
   content: "";
   position: absolute;
-  width: 700px;
-  height: 700px;
+  width: 650px;
+  height: 650px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(67, 121, 206, 0.38), transparent 70%);
-  top: -200px;
-  left: -150px;
-  animation: floatBlob1 12s ease-in-out infinite alternate;
+  background: radial-gradient(circle, rgba(60, 211, 193, 0.13), transparent 70%);
+  top: -180px;
+  left: -130px;
+  animation: floatBlob1 13s ease-in-out infinite alternate;
 }
 
 .auth-bg::after {
   content: "";
   position: absolute;
-  width: 500px;
-  height: 500px;
+  width: 480px;
+  height: 480px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.25), transparent 70%);
+  background: radial-gradient(circle, rgba(255, 134, 85, 0.10), transparent 70%);
   bottom: -100px;
-  right: 30%;
-  animation: floatBlob2 9s ease-in-out infinite alternate;
+  right: 28%;
+  animation: floatBlob2 10s ease-in-out infinite alternate;
 }
 
 @keyframes floatBlob1 {
   from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(80px, 60px) scale(1.15); }
+  to   { transform: translate(70px, 50px) scale(1.12); }
 }
 
 @keyframes floatBlob2 {
   from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(-60px, 40px) scale(1.1); }
+  to   { transform: translate(-50px, 35px) scale(1.09); }
 }
 
-/* ── Floating orb (third accent) ── */
+/* ── Floating orb ── */
 .auth-orb {
   position: absolute;
-  width: 380px;
-  height: 380px;
+  width: 360px;
+  height: 360px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(79, 139, 221, 0.22), transparent 70%);
+  background: radial-gradient(circle, rgba(255, 134, 85, 0.08), transparent 70%);
   top: 40%;
   right: -60px;
-  animation: floatBlob2 14s ease-in-out infinite alternate;
+  animation: floatBlob2 15s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 0;
 }
@@ -95,7 +95,7 @@
 }
 
 .auth-brand:hover .auth-brand-icon {
-  box-shadow: 0 12px 28px rgba(67, 121, 206, 0.65);
+  box-shadow: 0 12px 28px rgba(60, 211, 193, 0.4);
   transform: scale(1.05);
 }
 
@@ -104,11 +104,11 @@
 }
 
 .auth-brand-icon {
-  background: linear-gradient(135deg, #6197e3, #80a5e0);
+  background: linear-gradient(135deg, #3cd3c1, #2ab5a5);
   display: grid;
   place-items: center;
-  box-shadow: 0 8px 20px rgba(67, 121, 206, 0.5);
-  margin: 0; 
+  box-shadow: 0 8px 20px rgba(60, 211, 193, 0.35);
+  margin: 0;
   width: 52px;
   height: 52px;
   border-radius: 10px;
@@ -116,13 +116,14 @@
   font-size: 1.8rem;
   font-weight: 700;
   line-height: 1;
+  color: #fff;
   transition: all 0.25s ease;
 }
 
 .auth-brand-name {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #1a3340;
   letter-spacing: -0.01em;
 }
 
@@ -134,20 +135,13 @@
   font-size: clamp(2rem, 3vw, 2.8rem);
   font-weight: 700;
   line-height: 1.18;
-  color: #ffffff;
+  color: #1a3340;
   letter-spacing: -0.02em;
   margin: 0 0 0.9rem;
 }
 
-.auth-tagline h1 span {
-  background: linear-gradient(90deg, #60b4ff, #38bdf8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 .auth-tagline p {
-  color: rgba(255,255,255,0.6);
+  color: #5a7a8a;
   font-size: 1.05rem;
   line-height: 1.65;
 }
@@ -163,7 +157,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: rgba(255,255,255,0.75);
+  color: #070707;
   font-size: 0.95rem;
 }
 
@@ -171,11 +165,11 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #4f8bdd, #38bdf8);
+  background: #47b3a7;
   flex-shrink: 0;
 }
 
-/* ── Right panel: glass card ── */
+/* ── Right panel: card trắng ── */
 .auth-right {
   position: relative;
   z-index: 1;
@@ -187,7 +181,6 @@
   overflow-y: auto;
 }
 
-/* Center vertically only when card fits in viewport */
 @media (min-height: 750px) {
   .auth-right {
     align-items: center;
@@ -197,15 +190,13 @@
 
 .auth-glass-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  border: 1px solid rgba(60, 211, 193, 0.18);
   border-radius: 26px;
   padding: 2.2rem 2.4rem 2.4rem;
   box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255,255,255,0.1);
+    0 20px 60px rgba(26, 51, 64, 0.10),
+    0 4px 16px rgba(60, 211, 193, 0.08);
   animation: slideInRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -217,7 +208,8 @@
 /* ── Tab switcher ── */
 .auth-tab-strip {
   display: flex;
-  background: rgba(255,255,255,0.07);
+  background: #f1faf9;
+  border: 1px solid rgba(60, 211, 193, 0.22);
   border-radius: 14px;
   padding: 4px;
   gap: 4px;
@@ -228,7 +220,7 @@
   flex: 1;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.55);
+  color: #4a717d;
   font-family: "Sora", "Segoe UI", sans-serif;
   font-size: 0.95rem;
   font-weight: 600;
@@ -240,28 +232,28 @@
 }
 
 .auth-tab-btn.active {
-  background: linear-gradient(120deg, rgba(67,121,206,0.55), rgba(56,189,248,0.35));
+  background: linear-gradient(120deg, #35b5a6, #2ab5a5);
   color: #ffffff;
-  box-shadow: 0 2px 12px rgba(67,121,206,0.35);
+  box-shadow: 0 3px 14px rgba(60, 211, 193, 0.35);
 }
 
 .auth-tab-btn:hover:not(.active) {
-  color: rgba(255,255,255,0.8);
-  background: rgba(255,255,255,0.05);
+  color: #1a3340;
+  background: rgba(60, 211, 193, 0.10);
 }
 
 /* ── Card title ── */
 .auth-card-title {
   font-size: 1.45rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #1a3340;
   margin: 0 0 0.35rem;
   letter-spacing: -0.02em;
 }
 
 .auth-card-subtitle {
   font-size: 0.88rem;
-  color: rgba(255,255,255,0.5);
+  color: #546d78;
   margin: 0 0 1.6rem;
 }
 
@@ -278,7 +270,6 @@
   gap: 0.85rem;
 }
 
-/* Register form: all fields full-width, single column */
 .auth-form--register .auth-form-row {
   grid-template-columns: 1fr;
 }
@@ -290,10 +281,10 @@
 }
 
 .auth-field label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.65);
-  letter-spacing: 0.025em;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #4a7080;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -306,7 +297,7 @@
 .auth-field-icon {
   position: absolute;
   left: 0.85rem;
-  color: rgba(255,255,255,0.35);
+  color: #a0bdc8;
   display: flex;
   pointer-events: none;
   z-index: 1;
@@ -319,10 +310,10 @@
 
 .auth-input {
   width: 100%;
-  background: rgba(255,255,255,0.07) !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
+  background: #f6fdfc !important;
+  border: 1.5px solid #d0e8e4 !important;
   border-radius: 12px !important;
-  color: #ffffff !important;
+  color: #1a3340 !important;
   font-family: "Sora", "Segoe UI", sans-serif !important;
   font-size: 0.95rem !important;
   padding: 0.72rem 0.85rem 0.72rem 2.6rem !important;
@@ -331,14 +322,14 @@
 }
 
 .auth-input::placeholder {
-  color: rgba(255,255,255,0.28) !important;
+  color: #b0cccc !important;
 }
 
 .auth-input:focus {
   outline: none !important;
-  border-color: rgba(67, 121, 206, 0.7) !important;
-  background: rgba(255,255,255,0.11) !important;
-  box-shadow: 0 0 0 3px rgba(67, 121, 206, 0.22) !important;
+  border-color: #3cd3c1 !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(60, 211, 193, 0.15) !important;
 }
 
 /* ── Submit button ── */
@@ -352,9 +343,9 @@
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  background: linear-gradient(130deg, #4f8bdd, #4379ce 50%, #2563eb);
+  background: linear-gradient(120deg, #3cd3c1, #2ab5a5);
   color: #ffffff;
-  box-shadow: 0 8px 24px rgba(67, 121, 206, 0.45);
+  box-shadow: 0 8px 24px rgba(60, 211, 193, 0.32);
   transition: all 0.22s ease;
   margin-top: 0.3rem;
   position: relative;
@@ -365,7 +356,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(130deg, rgba(255,255,255,0.12), transparent);
+  background: linear-gradient(130deg, rgba(255,255,255,0.18), transparent);
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -376,11 +367,11 @@
 
 .auth-submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(67, 121, 206, 0.55);
+  box-shadow: 0 12px 32px rgba(60, 211, 193, 0.45);
 }
 
 .auth-submit-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
   transform: none;
 }
@@ -391,7 +382,7 @@
   align-items: center;
   gap: 0.9rem;
   margin: 0.85rem 0;
-  color: rgba(255,255,255,0.35);
+  color: #a0bdc8;
   font-size: 0.82rem;
 }
 
@@ -400,7 +391,7 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: rgba(255,255,255,0.12);
+  background: #ddeee9;
 }
 
 /* ── Google button ── */
@@ -410,11 +401,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.7rem;
-  border: 1px solid rgba(255,255,255,0.14);
-  background: rgba(255,255,255,0.06);
+  border: 1.5px solid #d8e8e5;
+  background: #ffffff;
   border-radius: 14px;
   padding: 0.8rem 1rem;
-  color: rgba(255,255,255,0.85);
+  color: #2c5060;
   font-family: "Sora", "Segoe UI", sans-serif;
   font-size: 0.95rem;
   font-weight: 600;
@@ -424,9 +415,10 @@
 }
 
 .auth-google-btn:hover {
-  background: rgba(255,255,255,0.11);
-  border-color: rgba(255,255,255,0.25);
+  background: #f5fbfa;
+  border-color: #3cd3c1;
   transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(60, 211, 193, 0.15);
 }
 
 .auth-google-icon {
@@ -450,15 +442,15 @@
 }
 
 .auth-alert.success {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  color: #6ee7b7;
+  background: rgba(34, 195, 138, 0.08);
+  border: 1px solid rgba(34, 195, 138, 0.35);
+  color: #0d6e43;
 }
 
 .auth-alert.error {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  color: #fca5a5;
+  background: rgba(255, 95, 109, 0.08);
+  border: 1px solid rgba(255, 95, 109, 0.35);
+  color: #a01426;
 }
 
 /* ── Already logged in view ── */
@@ -471,20 +463,20 @@
 }
 
 .auth-logged-in h2 {
-  color: #ffffff;
+  color: #1a3340;
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
 }
 
 .auth-logged-in p {
-  color: rgba(255,255,255,0.6);
+  color: #5a7a8a;
   font-size: 0.95rem;
   margin: 0;
 }
 
 .auth-logged-in strong {
-  color: #60b4ff;
+  color: #20b8a6;
 }
 
 /* ── Responsive ── */
@@ -518,9 +510,9 @@
 .otp-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(26, 51, 64, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -535,17 +527,15 @@
 }
 
 .otp-modal {
-  background: rgba(10, 22, 40, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: #ffffff;
+  border: 1px solid rgba(60, 211, 193, 0.2);
   border-radius: 24px;
   padding: 2.4rem 2.2rem 2rem;
   width: 100%;
   max-width: 420px;
   box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255,255,255,0.08);
+    0 24px 70px rgba(26, 51, 64, 0.14),
+    0 4px 16px rgba(60, 211, 193, 0.10);
   animation: slideUpModal 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -563,7 +553,7 @@
 .otp-modal-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #1a3340;
   text-align: center;
   margin: 0 0 0.4rem;
   letter-spacing: -0.02em;
@@ -571,14 +561,14 @@
 
 .otp-modal-subtitle {
   font-size: 0.88rem;
-  color: rgba(255,255,255,0.5);
+  color: #7a9baa;
   text-align: center;
   margin: 0 0 1.6rem;
   line-height: 1.5;
 }
 
 .otp-modal-subtitle strong {
-  color: #60b4ff;
+  color: #20b8a6;
   font-weight: 600;
 }
 
@@ -596,53 +586,53 @@
   font-size: 1.5rem;
   font-weight: 700;
   font-family: "Sora", "Segoe UI", monospace;
-  color: #ffffff !important;
-  background: rgba(255,255,255,0.07) !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
+  color: #1a3340 !important;
+  background: #f5fbfa !important;
+  border: 1.5px solid #d0e8e4 !important;
   border-radius: 12px !important;
-  caret-color: #60b4ff;
+  caret-color: #3cd3c1;
   transition: all 0.2s ease !important;
   padding: 0 !important;
 }
 
 .otp-digit-input:focus {
   outline: none !important;
-  border-color: rgba(67, 121, 206, 0.75) !important;
-  background: rgba(255,255,255,0.12) !important;
-  box-shadow: 0 0 0 3px rgba(67, 121, 206, 0.25) !important;
-  transform: scale(1.05);
+  border-color: #3cd3c1 !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(60, 211, 193, 0.15) !important;
+  transform: scale(1.06);
 }
 
 .otp-digit-input.filled {
-  border-color: rgba(67, 121, 206, 0.5) !important;
-  background: rgba(67, 121, 206, 0.1) !important;
+  border-color: #3cd3c1 !important;
+  background: rgba(60, 211, 193, 0.06) !important;
 }
 
 .otp-countdown {
   text-align: center;
   font-size: 0.88rem;
-  color: rgba(255,255,255,0.5);
+  color: #8aacb8;
   margin-bottom: 1.2rem;
 }
 
 .otp-resend-btn {
   background: transparent;
   border: none;
-  color: #60b4ff;
+  color: #20b8a6;
   font-family: "Sora", "Segoe UI", sans-serif;
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   padding: 0;
   transition: color 0.2s;
 }
 
 .otp-resend-btn:hover:not(:disabled) {
-  color: #93ccff;
+  color: #17968a;
 }
 
 .otp-resend-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -654,9 +644,9 @@
 
 .otp-cancel-btn {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1.5px solid #ddeee9;
   border-radius: 12px;
-  color: rgba(255,255,255,0.5);
+  color: #7a9baa;
   font-family: "Sora", "Segoe UI", sans-serif;
   font-size: 0.9rem;
   padding: 0.7rem;
@@ -665,7 +655,6 @@
 }
 
 .otp-cancel-btn:hover {
-  border-color: rgba(255,255,255,0.25);
-  color: rgba(255,255,255,0.75);
+  border-color: #a0d8d2;
+  color: #2c5060;
 }
-

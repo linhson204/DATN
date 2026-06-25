@@ -49,6 +49,32 @@ def _price_bucket(sale_price: float) -> str:
         return "price_bucket:above_3m"
 
 
+def _rating_bucket(avg_rating: float, review_count: int) -> Optional[str]:
+    """Phân loại rating trung bình của sản phẩm thành token feature cho LightFM.
+
+    Chỉ áp dụng khi sản phẩm có đủ review (>= 3) để đảm bảo độ tin cậy.
+    Đây là đặc trưng cấp sản phẩm (item-level), phản ánh chất lượng tổng thể
+    được đánh giá bởi cộng đồng người dùng — khác với interaction signal
+    của từng cá nhân.
+
+    Mapping:
+        >= 4.5 sao → avg_rating:excellent
+        >= 4.0 sao → avg_rating:good
+        >= 3.0 sao → avg_rating:average
+        <  3.0 sao → avg_rating:low
+    """
+    if review_count < 3:
+        return None
+    if avg_rating >= 4.5:
+        return "avg_rating:excellent"
+    elif avg_rating >= 4.0:
+        return "avg_rating:good"
+    elif avg_rating >= 3.0:
+        return "avg_rating:average"
+    else:
+        return "avg_rating:low"
+
+
 def age_bucket_from_age(age: Optional[int]) -> Optional[str]:
     """Quy đổi tuổi thành nhóm tuổi ổn định để dùng làm feature."""
     if age is None:
@@ -98,7 +124,13 @@ def age_bucket_from_birth_year(value: object, reference_year: Optional[int] = No
 
 
 def load_item_feature_rows(engine: Engine) -> pd.DataFrame:
-    """Tải các hàng đặc trưng của sản phẩm từ cơ sở dữ liệu, bao gồm thông tin mùa và chất liệu."""
+    """Tải các hàng đặc trưng của sản phẩm từ cơ sở dữ liệu.
+
+    Bao gồm: thông tin danh mục, mùa, chất liệu, giá bán và
+    rating trung bình (avg_rating) tính từ tất cả review của sản phẩm.
+    avg_rating được dùng làm item-level feature — phản ánh chất lượng
+    tổng thể của sản phẩm theo cộng đồng, không phải tín hiệu cá nhân.
+    """
     query = text(
         """
         SELECT
@@ -110,12 +142,21 @@ def load_item_feature_rows(engine: Engine) -> pd.DataFrame:
             c.sub_category,
             c.master_category,
             pa.attribute_value AS season,
-            md.code AS material_code
+            md.code AS material_code,
+            rv.avg_rating,
+            rv.review_count
         FROM products p
         LEFT JOIN product_categories c ON c.id = p.category_id
         LEFT JOIN product_attributes pa
             ON pa.product_id = p.id AND pa.attribute_key = 'season'
         LEFT JOIN material_dictionary md ON md.id = p.material_id
+        LEFT JOIN (
+            SELECT product_id,
+                   AVG(rating)  AS avg_rating,
+                   COUNT(*)     AS review_count
+            FROM product_reviews
+            GROUP BY product_id
+        ) rv ON rv.product_id = p.id
         WHERE p.status = TRUE
           AND p.total_stock > 0
         """
@@ -123,66 +164,22 @@ def load_item_feature_rows(engine: Engine) -> pd.DataFrame:
     return pd.read_sql(query, engine)
 
 
-def _discover_users_columns(engine: Engine) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
-    """Phát hiện tên cột user_id, gender, ngày sinh hoặc năm sinh trong bảng users."""
-    try:
-        columns = pd.read_sql(
-            text(
-                """
-                SELECT COLUMN_NAME
-                FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = DATABASE()
-                  AND TABLE_NAME = 'users'
-                """
-            ),
-            engine,
-        )
-    except Exception:
-        return None, None, None, None
-
-    if columns.empty or "COLUMN_NAME" not in columns.columns:
-        return None, None, None, None
-
-    lookup = {str(name).lower(): str(name) for name in columns["COLUMN_NAME"].tolist()}
-
-    def pick(candidates: list[str]) -> Optional[str]:
-        for candidate in candidates:
-            if candidate in lookup:
-                return lookup[candidate]
-        return None
-
-    user_id_col = pick(["id", "user_id"])
-    gender_col = pick(["gender", "target_gender", "sex"])
-    dob_col = pick(["date_of_birth", "birth_date", "dob"])
-    birth_year_col = pick(["birth_year", "year_of_birth"])
-    return user_id_col, gender_col, dob_col, birth_year_col
-
-
 def load_user_profile_rows(engine: Engine) -> pd.DataFrame:
-    """Tải dữ liệu hồ sơ người dùng (giới tính, ngày sinh) từ bảng users."""
-    user_id_col, gender_col, dob_col, birth_year_col = _discover_users_columns(engine)
-    if user_id_col is None:
-        return pd.DataFrame(columns=["user_id", "gender", "date_of_birth", "birth_year"])
-
-    select_gender = f"u.{gender_col} AS gender" if gender_col else "NULL AS gender"
-    select_dob = f"u.{dob_col} AS date_of_birth" if dob_col else "NULL AS date_of_birth"
-    select_birth_year = f"u.{birth_year_col} AS birth_year" if birth_year_col else "NULL AS birth_year"
-
+    """Tải dữ liệu hồ sơ người dùng (giới tính, năm sinh) từ bảng users."""
     query = text(
-        f"""
+        """
         SELECT
-            u.{user_id_col} AS user_id,
-            {select_gender},
-            {select_dob},
-            {select_birth_year}
-        FROM users u
+            id AS user_id,
+            gender,
+            birth_year
+        FROM users
         """
     )
 
     try:
         rows = pd.read_sql(query, engine)
     except Exception:
-        return pd.DataFrame(columns=["user_id", "gender", "date_of_birth", "birth_year"])
+        return pd.DataFrame(columns=["user_id", "gender", "birth_year"])
 
     return rows
 
@@ -220,6 +217,13 @@ def build_lightfm_item_features(item_rows: pd.DataFrame) -> list[tuple[str, list
             if season_val in ALL_SEASONS:
                 features.append(f"season:{_normalize_season_token(season_val)}")
 
+        # avg_rating phản ánh chất lượng tổng thể từ cộng đồng,
+        if hasattr(row, "avg_rating") and pd.notna(row.avg_rating):
+            review_count = int(getattr(row, "review_count", 0) or 0)
+            bucket = _rating_bucket(float(row.avg_rating), review_count)
+            if bucket:
+                features.append(bucket)
+
         tuples.append((product_id, features))
 
     return tuples
@@ -238,9 +242,7 @@ def build_lightfm_user_features(user_rows: pd.DataFrame) -> list[tuple[str, list
         if hasattr(row, "gender") and pd.notna(row.gender):
             features.append(f"user_gender:{_normalize_token(row.gender)}")
 
-        age_bucket = age_bucket_from_birth_date(getattr(row, "date_of_birth", None))
-        if age_bucket is None:
-            age_bucket = age_bucket_from_birth_year(getattr(row, "birth_year", None))
+        age_bucket = age_bucket_from_birth_year(getattr(row, "birth_year", None))
         if age_bucket:
             features.append(f"user_age:{age_bucket}")
 

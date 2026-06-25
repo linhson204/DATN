@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     item_map_path: Path = Field(default=BASE_DIR / "models" / "saved" / "item_id_map.json", alias="ITEM_MAP_PATH")
 
    # Các tham số liên quan đến việc tạo tín hiệu tương tác từ dữ liệu lịch sử.
-    view_lookback_days: int = Field(default=900, alias="VIEW_LOOKBACK_DAYS")
+    view_lookback_days: int = Field(default=1200, alias="VIEW_LOOKBACK_DAYS")
     order_lookback_days: int = Field(default=1800, alias="ORDER_LOOKBACK_DAYS")
     wishlist_lookback_days: int = Field(default=1800, alias="WISHLIST_LOOKBACK_DAYS")
     # Tín hiệu đánh giá sao — luôn bật, cửa sổ thời gian giống order
@@ -66,9 +66,14 @@ class Settings(BaseSettings):
     quick_view_weight: float = Field(default=0.25, alias="QUICK_VIEW_WEIGHT")
     detail_view_weight: float = Field(default=0.5, alias="DETAIL_VIEW_WEIGHT")
     deep_view_weight: float = Field(default=0.75, alias="DEEP_VIEW_WEIGHT")
-    wishlist_weight: float = Field(default=1.5, alias="WISHLIST_WEIGHT")
-    order_weight_scale: float = Field(default=3.0, alias="ORDER_WEIGHT_SCALE")
+    wishlist_weight: float = Field(default=1.0, alias="WISHLIST_WEIGHT")
     max_interaction_weight: float = Field(default=20.0, alias="MAX_INTERACTION_WEIGHT")
+
+    # Cấu hình gợi ý theo sản phẩm đã mua.
+    order_history_limit: int = Field(default=0, alias="ORDER_HISTORY_LIMIT")
+    order_similarity_top_n: int = Field(default=5, alias="ORDER_SIMILARITY_TOP_N")
+    order_similarity_boost_weight: float = Field(default=2.0, alias="ORDER_SIMILARITY_BOOST_WEIGHT")
+    order_purchased_item_penalty: float = Field(default=-1.0, alias="ORDER_PURCHASED_ITEM_PENALTY")
 
     '''Các tham số liên quan đến việc tạo tín hiệu tương tác dựa trên các sản phẩm 
     được xem cùng nhau (co-view).'''
@@ -76,7 +81,7 @@ class Settings(BaseSettings):
     fallback_top_n: int = Field(default=50, alias="FALLBACK_TOP_N")
 
     '''Tham số liên quan đến việc chia dữ liệu thành tập huấn luyện và tập kiểm tra.'''
-    split_holdout_days: int = Field(default=30, alias="SPLIT_HOLDOUT_DAYS")
+    split_holdout_days: int = Field(default=25, alias="SPLIT_HOLDOUT_DAYS")
 
     '''Các siêu tham số cho mô hình LightFM.'''
     lightfm_no_components: int = Field(default=64, alias="LIGHTFM_NO_COMPONENTS")

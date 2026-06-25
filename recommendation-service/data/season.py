@@ -46,10 +46,7 @@ def get_current_season(month: Optional[int] = None) -> str:
         - Tháng 8, 9, 10 → Fall (Thu)
         - Tháng 11, 12, 1 → Winter (Đông)
 
-    Lưu ý: Các tháng giao mùa (4, 8, 11) được gán cho mùa tiếp theo theo yêu cầu:
-        - Tháng 4 → Summer (vì khoảng 4→8 là hè)
-        - Tháng 8 → Fall (vì khoảng 8→11 là thu)
-        - Tháng 11 → Winter (vì khoảng 11→2 là đông)
+
     """
     if month is None:
         month = datetime.now().month
@@ -73,8 +70,8 @@ def get_adjacent_seasons(season: str) -> set[str]:
     Sản phẩm thuộc mùa đã qua → bị trừ điểm bình thường (trái mùa).
 
     Ví dụ đang là Summer:
-        - Fall  → giao mùa lên (giữ nguyên) ✅
-        - Spring → mùa cũ (trừ điểm)        ❌
+        - Fall  → giao mùa lên (giữ nguyên)
+        - Spring → mùa cũ (trừ điểm)       
     """
     next_season = {
         SPRING: SUMMER,

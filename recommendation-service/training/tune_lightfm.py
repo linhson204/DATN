@@ -11,10 +11,17 @@ from typing import Any, Iterable
 import pandas as pd
 
 from config import settings
-from data.data_pipeline import build_engine, extract_interactions
+from data.data_pipeline import (
+    build_engine,
+    extract_view_interactions,
+    extract_order_interactions,
+    extract_wishlist_interactions,
+    combine_interactions,
+)
 from data.feature_engineering import item_feature_tuples_for_catalog, user_feature_tuples_for_users
+from data.season import build_item_season_map
 from models.lightfm_model import LightFMRecommender
-from training.evaluate import evaluate_lightfm, time_based_split
+from training.evaluate import evaluate_lightfm
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +56,75 @@ def _iter_param_grid(base: dict[str, Any], grid: dict[str, Iterable[Any]]) -> It
 def run_tuning(mysql_url: str | None, top_n: int) -> pd.DataFrame:
     engine = build_engine(mysql_url)
 
-    logger.info("Extracting interactions from database...")
-    interactions = extract_interactions(engine)
-    if interactions.empty:
+    # ------------------------------------------------------------------
+    # Trích xuất từng nguồn tín hiệu thô (chưa aggregate)
+    # ------------------------------------------------------------------
+    logger.info("Extracting raw interactions from database...")
+    views = extract_view_interactions(engine)
+    orders_raw = extract_order_interactions(engine)
+
+    wishlist: pd.DataFrame | None = None
+    try:
+        wishlist = extract_wishlist_interactions(engine)
+        logger.info("Extracted %d wishlist interactions", len(wishlist))
+    except Exception:
+        logger.warning("Failed to extract wishlist interactions, skipping")
+
+    all_raw = pd.concat(
+        [df for df in [views, orders_raw, wishlist] if df is not None and not df.empty],
+        ignore_index=True,
+    )
+    if all_raw.empty:
         raise RuntimeError("No interactions found. Check source tables and lookback windows.")
 
-    train_df, test_df = time_based_split(interactions, holdout_days=settings.split_holdout_days)
+    all_raw["created_at"] = pd.to_datetime(all_raw["created_at"], errors="coerce")
+    all_raw = all_raw.dropna(subset=["created_at"])
+
+    # ------------------------------------------------------------------
+    # Split ở mức RAW EVENTS (trước khi aggregate)
+    # ------------------------------------------------------------------
+    # Đây là điểm mấu chốt: nếu aggregate trước rồi mới split (dùng MAX timestamp),
+    # các sản phẩm được xem nhiều lần trong train period nhưng cũng xem gần đây
+    # sẽ bị đưa toàn bộ vào test_df → model không có training signal → metric thấp giả tạo.
+    cutoff = all_raw["created_at"].max() - pd.Timedelta(days=settings.split_holdout_days)
+    logger.info(
+        "Time split: cutoff=%s (holdout=%d days), train=%d events, test=%d events",
+        cutoff.date(),
+        settings.split_holdout_days,
+        int((all_raw["created_at"] < cutoff).sum()),
+        int((all_raw["created_at"] >= cutoff).sum()),
+    )
+
+    def _split_signal(df: pd.DataFrame, signal: str) -> pd.DataFrame:
+        if df is None or df.empty:
+            return pd.DataFrame()
+        if "signal" not in df.columns:
+            return df
+        return df[df["signal"].str.upper() == signal].copy()
+
+    train_views  = _split_signal(views[views["created_at"] < cutoff] if not views.empty else views, "VIEW")
+    train_orders = _split_signal(orders_raw[orders_raw["created_at"] < cutoff] if not orders_raw.empty else orders_raw, "ORDER")
+    train_wish   = _split_signal(wishlist[wishlist["created_at"] < cutoff] if wishlist is not None and not wishlist.empty else pd.DataFrame(), "WISHLIST")
+
+    test_views   = _split_signal(views[views["created_at"] >= cutoff] if not views.empty else views, "VIEW")
+    test_orders  = _split_signal(orders_raw[orders_raw["created_at"] >= cutoff] if not orders_raw.empty else orders_raw, "ORDER")
+    test_wish    = _split_signal(wishlist[wishlist["created_at"] >= cutoff] if wishlist is not None and not wishlist.empty else pd.DataFrame(), "WISHLIST")
+
+    train_df = combine_interactions(train_views, train_orders, train_wish if not train_wish.empty else None)
+    test_df  = combine_interactions(test_views,  test_orders,  test_wish  if not test_wish.empty  else None)
+
     if train_df.empty or test_df.empty:
         raise RuntimeError("Time-based split produced an empty train or test set.")
 
+    logger.info(
+        "Split result: train=%d rows (%d users, %d items), test=%d rows (%d users, %d items)",
+        len(train_df), train_df["user_id"].nunique(), train_df["product_id"].nunique(),
+        len(test_df),  test_df["user_id"].nunique(),  test_df["product_id"].nunique(),
+    )
+
+    # ------------------------------------------------------------------
+    # Chuẩn bị features và metadata dùng chung cho mọi tổ hợp tham số
+    # ------------------------------------------------------------------
     train_item_ids = set(train_df["product_id"].astype(str).tolist())
     item_features = item_feature_tuples_for_catalog(engine, allowed_item_ids=train_item_ids)
     logger.info("Item features prepared: %d items with features", len(item_features))
@@ -65,6 +132,29 @@ def run_tuning(mysql_url: str | None, top_n: int) -> pd.DataFrame:
     train_user_ids = set(train_df["user_id"].astype(str).tolist())
     user_features = user_feature_tuples_for_users(engine, allowed_user_ids=train_user_ids)
     logger.info("User features prepared: %d users with features", len(user_features))
+
+    # order_history: lấy từ toàn bộ DB (giống train.py) để điều kiện inference khớp production.
+    order_history: dict[str, list[str]] = {}
+    if not orders_raw.empty:
+        _orders = orders_raw.copy()
+        _orders["user_id"] = _orders["user_id"].astype(str)
+        _orders["product_id"] = _orders["product_id"].astype(str)
+        _orders["created_at"] = pd.to_datetime(_orders["created_at"], errors="coerce")
+        _orders = _orders.dropna(subset=["user_id", "product_id", "created_at"])
+        _orders = _orders.sort_values("created_at", ascending=False, kind="stable")
+        for user_id, group in _orders.groupby("user_id", sort=False):
+            seen: set[str] = set()
+            ordered_items: list[str] = []
+            for product_id in group["product_id"].tolist():
+                if product_id in seen:
+                    continue
+                seen.add(product_id)
+                ordered_items.append(product_id)
+            order_history[str(user_id)] = ordered_items
+    logger.info("Order history built: %d users", len(order_history))
+
+    item_seasons = build_item_season_map(engine)
+    logger.info("Item season map: %d products with season info", len(item_seasons))
 
     base_params = {
         "lightfm_no_components": settings.lightfm_no_components,
@@ -97,6 +187,11 @@ def run_tuning(mysql_url: str | None, top_n: int) -> pd.DataFrame:
             item_feature_tuples=item_features,
             user_feature_tuples=user_features,
         )
+
+        # Ghi đè user_order_history và item_seasons để điều kiện inference
+        # khớp hoàn toàn với production (giống train.py).
+        recommender.user_order_history = order_history
+        recommender.set_item_seasons(item_seasons)
 
         metrics = evaluate_lightfm(
             recommender,

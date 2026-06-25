@@ -3,14 +3,12 @@ from __future__ import annotations
 import argparse
 import logging
 from datetime import datetime, timedelta
-from math import log1p
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import SQLAlchemyError
 
 from config import settings
 
@@ -35,17 +33,6 @@ def _view_weight_map() -> dict[str, float]:
         "QUICK_VIEW": settings.quick_view_weight,
         "DETAIL_VIEW": settings.detail_view_weight,
         "DEEP_VIEW": settings.deep_view_weight,
-    }
-
-
-def _review_weight_map() -> dict[int, float]:
-    """Trả về trọng số cho từng mức sao review theo thang mới."""
-    return {
-        5: 2.0,
-        4: 1.0,
-        3: 0.0,
-        2: -1.0,
-        1: -2.0,
     }
 
 
@@ -87,13 +74,19 @@ def extract_view_interactions(engine: Engine, lookback_days: Optional[int] = Non
 def extract_order_interactions(engine: Engine, lookback_days: Optional[int] = None) -> pd.DataFrame:
     """
     Trích xuất dữ liệu tương tác đặt hàng (orders) từ database.
-    
+
+    Chiến lược trọng số:
+        Sản phẩm đã mua được gán weight âm (-1.0) trong interaction matrix.
+        Mục đích: model LightFM học được tín hiệu "không nên gợi ý lại sản phẩm đã mua".
+        Penalty tương tự cũng được áp dụng tại inference-time qua order_purchased_item_penalty.
+
     Tham số:
         engine: SQLAlchemy engine kết nối tới database.
         lookback_days: Số ngày gần đây để lấy dữ liệu (mặc định lấy từ settings).
-        
+
     Trả về:
         DataFrame chứa các cột: user_id, product_id, weight, created_at, signal.
+        weight luôn = -1.0 (negative feedback cho sản phẩm đã mua).
     """
     days = int(lookback_days or settings.order_lookback_days)
     cutoff = datetime.now() - timedelta(days=days)
@@ -118,8 +111,10 @@ def extract_order_interactions(engine: Engine, lookback_days: Optional[int] = No
         return pd.DataFrame(columns=["user_id", "product_id", "weight", "created_at", "signal"])
 
     quantity = orders["quantity"].fillna(0).astype(float).clip(lower=0)
-    orders["weight"] = settings.order_weight_scale * quantity.map(lambda value: log1p(value))
-    orders = orders[orders["weight"] > 0]
+    # Gán trọng số âm cho sản phẩm đã mua: model học được rằng không nên gợi ý lại.
+    # Chỉ giữ các hàng có quantity > 0 (đã thực sự đặt hàng).
+    orders["weight"] = quantity.map(lambda value: float(settings.order_purchased_item_penalty) if value > 0 else 0.0)
+    orders = orders[orders["weight"] != 0.0]
     orders["signal"] = "ORDER"
     return orders[["user_id", "product_id", "weight", "created_at", "signal"]]
 
@@ -158,89 +153,30 @@ def extract_wishlist_interactions(engine: Engine, lookback_days: Optional[int] =
     return wishlist[["user_id", "product_id", "weight", "created_at", "signal"]]
 
 
-def extract_review_interactions(engine: Engine, lookback_days: Optional[int] = None) -> pd.DataFrame:
-    """
-    Trích xuất tín hiệu đánh giá sao từ bảng product_reviews.
 
-    Mapping trọng số:
-        5 sao → +5,  4 sao → +3,  3 sao → +1
-        2 sao → bỏ qua (không đóng góp),  1 sao → -1
-
-    Đơn hàng KHÔNG có review (implicit positive) → +5 điểm tự động.
-
-    Trả về:
-        DataFrame chứa các cột: user_id, product_id, weight, created_at, signal.
-    """
-    days = int(lookback_days or settings.review_lookback_days)
-    cutoff = datetime.now() - timedelta(days=days)
-
-    # 1. Lấy các đánh giá có sao
-    review_query = text(
-        """
-        SELECT user_id, product_id, rating, created_at
-        FROM product_reviews
-        WHERE created_at >= :cutoff
-        """
-    )
-    reviews = pd.read_sql(review_query, engine, params={"cutoff": cutoff})
-
-    # 2. Lấy các đơn hàng đã mua nhưng chưa review (implicit 5 sao)
-    no_review_query = text(
-        """
-        SELECT DISTINCT o.user_id, oi.product_id, o.created_at
-        FROM orders o
-        JOIN order_items oi ON oi.order_id = o.id
-        WHERE oi.product_id IS NOT NULL
-          AND o.status <> 'CANCELLED'
-          AND o.created_at >= :cutoff
-          AND NOT EXISTS (
-              SELECT 1 FROM product_reviews r
-              WHERE r.user_id = o.user_id AND r.product_id = oi.product_id
-          )
-        """
-    )
-    no_review = pd.read_sql(no_review_query, engine, params={"cutoff": cutoff})
-
-    frames: list[pd.DataFrame] = []
-
-    if not reviews.empty:
-        reviews["weight"] = reviews["rating"].map(_review_weight_map())
-        reviews = reviews[reviews["weight"] != 0.0].copy()  # bỏ 2 sao
-        reviews["signal"] = "REVIEW"
-        if not reviews.empty:
-            frames.append(reviews[["user_id", "product_id", "weight", "created_at", "signal"]])
-
-    if not no_review.empty:
-        no_review["weight"] = 1.5  # Trọng số cho đơn hàng không review (implicit positive)
-        no_review["signal"] = "REVIEW_IMPLICIT"
-        frames.append(no_review[["user_id", "product_id", "weight", "created_at", "signal"]])
-
-    if not frames:
-        return pd.DataFrame(columns=["user_id", "product_id", "weight", "created_at", "signal"])
-
-    result = pd.concat(frames, ignore_index=True)
-    logger.info(
-        "Review interactions: %d explicit, %d implicit (no-review orders)",
-        len(reviews) if not reviews.empty else 0,
-        len(no_review) if not no_review.empty else 0,
-    )
-    return result
 
 
 def combine_interactions(
     views: pd.DataFrame,
     orders: pd.DataFrame,
     wishlist: Optional[pd.DataFrame] = None,
-    reviews: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """
-    Kết hợp dữ liệu từ nhiều nguồn (views, orders, wishlist, reviews) thành một DataFrame duy nhất.
+    Kết hợp dữ liệu từ nhiều nguồn (views, orders, wishlist) thành một DataFrame duy nhất.
+
+
+    Chiến lược ORDER VETO:
+        Sau khi tổng hợp tất cả tín hiệu, nếu một cặp (user_id, product_id) có tín hiệu ORDER,
+        weight cuối cùng sẽ bị ép về giá trị penalty (order_purchased_item_penalty = -1.0),
+        bất kể bao nhiêu điểm dương đã tích lũy từ view/wishlist/review trước đó.
+
+        Lý do: người dùng xem sản phẩm nhiều lần trước khi mua sẽ tích lũy điểm dương
+        (ví dụ 5 × DETAIL_VIEW = +2.5), nếu không veto thì ORDER(-1.0) không thể
+        kéo net weight xuống âm, dẫn đến sản phẩm đã mua vẫn bị gợi ý lại.
     """
     frames = [views, orders]
     if wishlist is not None and not wishlist.empty:
         frames.append(wishlist)
-    if reviews is not None and not reviews.empty:
-        frames.append(reviews)
 
     combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
     if combined.empty:
@@ -252,6 +188,14 @@ def combine_interactions(
 
     combined = combined.dropna(subset=["user_id", "product_id", "created_at", "weight"])
 
+    # Xác định tập (user_id, product_id) đã có tín hiệu ORDER trước khi aggregate
+    purchased_pairs: set[tuple[str, str]] = set()
+    if "signal" in combined.columns:
+        order_mask = combined["signal"].astype(str).str.upper() == "ORDER"
+        purchased_pairs = set(
+            zip(combined.loc[order_mask, "user_id"], combined.loc[order_mask, "product_id"])
+        )
+
     aggregated = (
         combined.groupby(["user_id", "product_id"], as_index=False)
         .agg(weight=("weight", "sum"), created_at=("created_at", "max"))
@@ -260,7 +204,22 @@ def combine_interactions(
     )
 
     weight_cap = settings.max_interaction_weight
+    # Clip upper để tránh outlier dương, nhưng giữ nguyên giá trị âm (negative feedback từ ORDER)
     aggregated["weight"] = aggregated["weight"].clip(upper=weight_cap)
+
+    # ORDER VETO: ép toàn bộ cặp đã mua về penalty, bất kể tổng điểm tích lũy
+    if purchased_pairs:
+        purchased_penalty = float(settings.order_purchased_item_penalty)
+        veto_mask = aggregated.apply(
+            lambda row: (row["user_id"], row["product_id"]) in purchased_pairs, axis=1
+        )
+        aggregated.loc[veto_mask, "weight"] = purchased_penalty
+        logger.info(
+            "ORDER VETO applied: %d purchased pairs forced to weight=%.1f",
+            int(veto_mask.sum()),
+            purchased_penalty,
+        )
+
     logger.info(
         "Combined interactions: %d rows, weight range [%.2f, %.2f] (cap=%.1f)",
         len(aggregated),
@@ -293,15 +252,8 @@ def extract_interactions(engine: Engine) -> pd.DataFrame:
     except SQLAlchemyError:
         logger.warning("Failed to extract wishlist interactions, skipping")
 
-    # Tín hiệu review luôn được bật — bao gồm cả đơn hàng không review (implicit +5)
-    reviews = None
-    try:
-        reviews = extract_review_interactions(engine)
-        logger.info("Extracted %d review interactions (explicit + implicit)", len(reviews))
-    except SQLAlchemyError:
-        logger.warning("Failed to extract review interactions, skipping", exc_info=True)
 
-    interactions = combine_interactions(views=views, orders=orders, wishlist=wishlist, reviews=reviews)
+    interactions = combine_interactions(views=views, orders=orders, wishlist=wishlist)
     return interactions
 
 

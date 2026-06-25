@@ -5,8 +5,11 @@ import json
 import logging
 from pathlib import Path
 
+import joblib
+import pandas as pd
+
 from config import settings
-from data.data_pipeline import build_engine, extract_interactions, save_interactions
+from data.data_pipeline import build_engine, extract_interactions, extract_order_interactions, save_interactions
 from data.feature_engineering import item_feature_tuples_for_catalog, user_feature_tuples_for_users
 from data.season import build_item_season_map
 from models.fallback import PopularItemsFallback
@@ -33,6 +36,7 @@ def train_pipeline(mysql_url: str | None = None) -> dict[str, dict[str, float]]:
     # ------------------------------------------------------------------
     logger.info("Extracting interactions from database...")
     interactions = extract_interactions(engine)
+    orders = extract_order_interactions(engine)
 
     if interactions.empty:
         raise RuntimeError("No interactions found. Check source tables and lookback windows.")
@@ -46,6 +50,30 @@ def train_pipeline(mysql_url: str | None = None) -> dict[str, dict[str, float]]:
 
     save_interactions(interactions, settings.interactions_output_path)
     logger.info("Interactions saved to %s", settings.interactions_output_path)
+
+    order_history: dict[str, list[str]] = {}
+    if not orders.empty:
+        orders = orders.copy()
+        orders["user_id"] = orders["user_id"].astype(str)
+        orders["product_id"] = orders["product_id"].astype(str)
+        orders["created_at"] = pd.to_datetime(orders["created_at"], errors="coerce")
+        orders = orders.dropna(subset=["user_id", "product_id", "created_at"])
+        orders = orders.sort_values("created_at", ascending=False, kind="stable")
+
+        for user_id, group in orders.groupby("user_id", sort=False):
+            seen: set[str] = set()
+            ordered_items: list[str] = []
+            for product_id in group["product_id"].tolist():
+                if product_id in seen:
+                    continue
+                seen.add(product_id)
+                ordered_items.append(product_id)
+            order_history[str(user_id)] = ordered_items
+
+    order_history_path = Path(settings.artifact_dir) / "user_order_history.joblib"
+    order_history_path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(order_history, order_history_path)
+    logger.info("Order history saved to %s (%d users)", order_history_path, len(order_history))
 
     # ------------------------------------------------------------------
     # 2. Chia dữ liệu theo thời gian (time-based split)
@@ -102,6 +130,7 @@ def train_pipeline(mysql_url: str | None = None) -> dict[str, dict[str, float]]:
         item_feature_tuples=item_features,
         user_feature_tuples=user_features,
     )
+    recommender.user_order_history = order_history
 
     # Gắn mapping product_id -> mùa vào recommender trước khi lưu artifact
     logger.info("Building item season map from product_attributes...")
