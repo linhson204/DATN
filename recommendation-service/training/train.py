@@ -14,7 +14,13 @@ from data.feature_engineering import item_feature_tuples_for_catalog, user_featu
 from data.season import build_item_season_map
 from models.fallback import PopularItemsFallback
 from models.lightfm_model import LightFMRecommender
-from training.evaluate import evaluate_lightfm, evaluate_popular_baseline, time_based_split
+from training.evaluate import (
+    evaluate_content_based,
+    evaluate_collaborative,
+    evaluate_lightfm,
+    evaluate_popular_baseline,
+    time_based_split,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -153,16 +159,53 @@ def train_pipeline(mysql_url: str | None = None) -> dict[str, dict[str, float]]:
     fallback.save(settings.fallback_data_path)
 
     # ------------------------------------------------------------------
-    # 6. Đánh giá mô hình
+    # 6. Đánh giá mô hình — so sánh 4 phương pháp
     # ------------------------------------------------------------------
-    logger.info("Evaluating models...")
+    logger.info("Evaluating models (4 methods)...")
+
+    # 6a. Popular Baseline
+    logger.info("  [1/4] Popular Baseline...")
+    popular_metrics = evaluate_popular_baseline(train_df, test_df)
+
+    # 6b. Content-Based Filtering (TF-IDF cosine similarity)
+    logger.info("  [2/4] Content-Based Filtering (TF-IDF)...")
+    cb_metrics = evaluate_content_based(
+        item_feature_tuples=item_features,
+        train_df=train_df,
+        test_df=test_df,
+    )
+
+    # 6c. Collaborative Filtering thuần túy (LightFM không features)
+    logger.info("  [3/4] Collaborative Filtering (LightFM no-features)...")
+    cf_metrics = evaluate_collaborative(
+        train_df=train_df,
+        test_df=test_df,
+        no_components=settings.lightfm_no_components,
+        loss=settings.lightfm_loss,
+        learning_rate=settings.lightfm_learning_rate,
+        item_alpha=settings.lightfm_item_alpha,
+        user_alpha=settings.lightfm_user_alpha,
+        epochs=settings.lightfm_epochs,
+        num_threads=settings.lightfm_num_threads,
+        random_state=settings.lightfm_random_state,
+    )
+
+    # 6d. Hybrid (LightFM đầy đủ item + user features)
+    logger.info("  [4/4] Hybrid LightFM (item + user features)...")
+    hybrid_metrics = evaluate_lightfm(recommender, test_df, train_df=train_df)
+
     metrics = {
-        "popular": evaluate_popular_baseline(train_df, test_df),
-        "lightfm": evaluate_lightfm(recommender, test_df, train_df=train_df),
+        "popular": popular_metrics,
+        "content_based": cb_metrics,
+        "collaborative": cf_metrics,
+        "lightfm_hybrid": hybrid_metrics,
     }
 
+    logger.info("-" * 60)
+    logger.info("Evaluation summary (4 methods):")
     for model_name, model_metrics in metrics.items():
-        logger.info("  %s: %s", model_name, json.dumps(model_metrics, indent=None))
+        logger.info("  %-20s %s", model_name, json.dumps(model_metrics, indent=None))
+    logger.info("-" * 60)
 
     metrics_path = Path(settings.artifact_dir) / "metrics.json"
     metrics_path.parent.mkdir(parents=True, exist_ok=True)

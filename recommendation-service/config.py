@@ -69,12 +69,12 @@ class Settings(BaseSettings):
    
     wishlist_weight: float = Field(default=1.0, alias="WISHLIST_WEIGHT")
     cart_weight: float = Field(default=1.5, alias="CART_WEIGHT")
-    max_interaction_weight: float = Field(default=22.0, alias="MAX_INTERACTION_WEIGHT")
+    max_interaction_weight: float = Field(default=20.0, alias="MAX_INTERACTION_WEIGHT")
 
     # Cấu hình gợi ý theo sản phẩm đã mua.
     order_history_limit: int = Field(default=0, alias="ORDER_HISTORY_LIMIT")
     order_similarity_top_n: int = Field(default=5, alias="ORDER_SIMILARITY_TOP_N")
-    order_similarity_boost_weight: float = Field(default=2.0, alias="ORDER_SIMILARITY_BOOST_WEIGHT")
+    order_similarity_boost_weight: float = Field(default=1.0, alias="ORDER_SIMILARITY_BOOST_WEIGHT")
     order_purchased_item_penalty: float = Field(default=-1.0, alias="ORDER_PURCHASED_ITEM_PENALTY")
 
     '''Các tham số liên quan đến việc tạo tín hiệu tương tác dựa trên các sản phẩm 
@@ -86,10 +86,10 @@ class Settings(BaseSettings):
     split_holdout_days: int = Field(default=25, alias="SPLIT_HOLDOUT_DAYS")
 
     '''Các siêu tham số cho mô hình LightFM.'''
-    lightfm_no_components: int = Field(default=64, alias="LIGHTFM_NO_COMPONENTS")
+    lightfm_no_components: int = Field(default=32, alias="LIGHTFM_NO_COMPONENTS")
     lightfm_loss: str = Field(default="warp", alias="LIGHTFM_LOSS")
     lightfm_learning_rate: float = Field(default=0.05, alias="LIGHTFM_LEARNING_RATE")
-    lightfm_epochs: int = Field(default=50, alias="LIGHTFM_EPOCHS")
+    lightfm_epochs: int = Field(default=80, alias="LIGHTFM_EPOCHS")
     lightfm_num_threads: int = Field(default=4, alias="LIGHTFM_NUM_THREADS")
     lightfm_item_alpha: float = Field(default=1e-4, alias="LIGHTFM_ITEM_ALPHA")
     lightfm_user_alpha: float = Field(default=1e-4, alias="LIGHTFM_USER_ALPHA")
