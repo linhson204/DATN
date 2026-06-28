@@ -1,4 +1,5 @@
-# DATN – Hướng dẫn Cài đặt & Chạy Dự án
+# Hệ gợi ý thương mại điện tử trong website bán quần áo và phụ kiện
+# Hướng dẫn Cài đặt & Chạy Dự án
 
 Dự án gồm **3 thành phần** chạy song song:
 
