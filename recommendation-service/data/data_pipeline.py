@@ -153,6 +153,43 @@ def extract_wishlist_interactions(engine: Engine, lookback_days: Optional[int] =
     return wishlist[["user_id", "product_id", "weight", "created_at", "signal"]]
 
 
+def extract_cart_interactions(engine: Engine, lookback_days: Optional[int] = None) -> pd.DataFrame:
+    """
+    Trích xuất dữ liệu tương tác thêm vào giỏ hàng (cart_items) từ database.
+
+    Bảng cart_items sử dụng variant_id thay vì product_id, vì vậy cần JOIN
+    với bảng product_variants để ánh xạ sang product_id.
+
+    Tham số:
+        engine: SQLAlchemy engine kết nối tới database.
+        lookback_days: Số ngày gần đây để lấy dữ liệu (mặc định lấy từ settings).
+
+    Trả về:
+        DataFrame chứa các cột: user_id, product_id, weight, created_at, signal.
+    """
+    days = int(lookback_days or settings.cart_lookback_days)
+    cutoff = datetime.now() - timedelta(days=days)
+
+    query = text(
+        """
+        SELECT
+            ci.user_id,
+            pv.product_id,
+            ci.created_at
+        FROM cart_items ci
+        JOIN product_variants pv ON pv.id = ci.variant_id
+        WHERE ci.created_at >= :cutoff
+          AND pv.product_id IS NOT NULL
+        """
+    )
+
+    cart = pd.read_sql(query, engine, params={"cutoff": cutoff})
+    if cart.empty:
+        return pd.DataFrame(columns=["user_id", "product_id", "weight", "created_at", "signal"])
+
+    cart["weight"] = settings.cart_weight
+    cart["signal"] = "CART"
+    return cart[["user_id", "product_id", "weight", "created_at", "signal"]]
 
 
 
@@ -160,9 +197,10 @@ def combine_interactions(
     views: pd.DataFrame,
     orders: pd.DataFrame,
     wishlist: Optional[pd.DataFrame] = None,
+    cart: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """
-    Kết hợp dữ liệu từ nhiều nguồn (views, orders, wishlist) thành một DataFrame duy nhất.
+    Kết hợp dữ liệu từ nhiều nguồn (views, orders, wishlist, cart) thành một DataFrame duy nhất.
 
 
     Chiến lược ORDER VETO:
@@ -177,6 +215,8 @@ def combine_interactions(
     frames = [views, orders]
     if wishlist is not None and not wishlist.empty:
         frames.append(wishlist)
+    if cart is not None and not cart.empty:
+        frames.append(cart)
 
     combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
     if combined.empty:
@@ -249,11 +289,17 @@ def extract_interactions(engine: Engine) -> pd.DataFrame:
     try:
         wishlist = extract_wishlist_interactions(engine)
         logger.info("Extracted %d wishlist interactions", len(wishlist))
-    except SQLAlchemyError:
+    except Exception:
         logger.warning("Failed to extract wishlist interactions, skipping")
 
+    cart = None
+    try:
+        cart = extract_cart_interactions(engine)
+        logger.info("Extracted %d cart interactions", len(cart))
+    except Exception:
+        logger.warning("Failed to extract cart interactions, skipping")
 
-    interactions = combine_interactions(views=views, orders=orders, wishlist=wishlist)
+    interactions = combine_interactions(views=views, orders=orders, wishlist=wishlist, cart=cart)
     return interactions
 
 

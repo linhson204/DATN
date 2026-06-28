@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     view_lookback_days: int = Field(default=1200, alias="VIEW_LOOKBACK_DAYS")
     order_lookback_days: int = Field(default=1800, alias="ORDER_LOOKBACK_DAYS")
     wishlist_lookback_days: int = Field(default=1800, alias="WISHLIST_LOOKBACK_DAYS")
-    # Tín hiệu đánh giá sao — luôn bật, cửa sổ thời gian giống order
+    cart_lookback_days: int = Field(default=1800, alias="CART_LOOKBACK_DAYS")
     review_lookback_days: int = Field(default=1800, alias="REVIEW_LOOKBACK_DAYS")
     
     # Các trọng số được sử dụng để tính toán tín hiệu tương tác từ các hành động 
@@ -66,8 +66,10 @@ class Settings(BaseSettings):
     quick_view_weight: float = Field(default=0.25, alias="QUICK_VIEW_WEIGHT")
     detail_view_weight: float = Field(default=0.5, alias="DETAIL_VIEW_WEIGHT")
     deep_view_weight: float = Field(default=0.75, alias="DEEP_VIEW_WEIGHT")
+   
     wishlist_weight: float = Field(default=1.0, alias="WISHLIST_WEIGHT")
-    max_interaction_weight: float = Field(default=20.0, alias="MAX_INTERACTION_WEIGHT")
+    cart_weight: float = Field(default=1.5, alias="CART_WEIGHT")
+    max_interaction_weight: float = Field(default=22.0, alias="MAX_INTERACTION_WEIGHT")
 
     # Cấu hình gợi ý theo sản phẩm đã mua.
     order_history_limit: int = Field(default=0, alias="ORDER_HISTORY_LIMIT")

@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import time
+from datetime import datetime
 from itertools import product
 from pathlib import Path
 from typing import Any, Iterable
@@ -28,11 +29,11 @@ logger = logging.getLogger(__name__)
 # Edit these lists to test different values.
 # Example: lightfm_no_components = [64, 100, 128]
 PARAM_GRID: dict[str, list[Any]] = {
-    "lightfm_no_components": [64, 128],
-    "lightfm_loss": ["warp"],
-    "lightfm_learning_rate": [0.05],
-    "lightfm_epochs": [50, 60, 80],
-    "lightfm_num_threads": [4],
+    "lightfm_no_components": [32, 64, 128],      # Thêm giá trị 32
+    "lightfm_loss": ["warp", "bpr"],             # Thêm giá trị "bpr"
+    "lightfm_learning_rate": [0.05, 0.1],  # Thêm 0.01 và 0.1
+    "lightfm_epochs": [50, 60, 80],  # Thêm 40 và 70
+    "lightfm_num_threads": [4],  # Thêm 6 và 7
     "lightfm_alpha": [1e-4, 1e-5, 1e-6],
 }
 
@@ -215,6 +216,31 @@ def run_tuning(mysql_url: str | None, top_n: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _save_results(results: pd.DataFrame, output_dir: Path) -> None:
+    """Lưu kết quả tuning ra CSV và Markdown, tên file có timestamp."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # --- CSV: dễ import vào Excel / pandas ---
+    csv_path = output_dir / f"tune_results_{timestamp}.csv"
+    results.to_csv(csv_path, index=False)
+    logger.info("Results saved to CSV: %s", csv_path)
+
+    # --- Markdown: dễ đọc trực tiếp ---
+    md_path = output_dir / f"tune_results_{timestamp}.md"
+    with md_path.open("w", encoding="utf-8") as f:
+        f.write(f"# LightFM Tuning Results\n\n")
+        f.write(f"Generated at: `{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}`\n\n")
+        f.write(f"Total combinations tried: **{len(results)}**\n\n")
+        f.write(results.to_markdown(index=False))
+        f.write("\n")
+    logger.info("Results saved to Markdown: %s", md_path)
+
+    print(f"\n📁 Results saved to: {output_dir}")
+    print(f"   • CSV      : {csv_path.name}")
+    print(f"   • Markdown : {md_path.name}")
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -222,6 +248,12 @@ def main() -> None:
     parser.add_argument("--mysql-url", dest="mysql_url", default=None)
     parser.add_argument("--top-n", type=int, default=30)
     parser.add_argument("--sort-by", default="ndcg@10")
+    parser.add_argument(
+        "--output-dir",
+        dest="output_dir",
+        default="tune_outputs",
+        help="Thư mục lưu kết quả (CSV + Markdown). Mặc định: ./tune_outputs",
+    )
     args = parser.parse_args()
 
     results = run_tuning(
@@ -237,6 +269,9 @@ def main() -> None:
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 140)
     print(results.to_string(index=False))
+
+    # Lưu kết quả ra file
+    _save_results(results, output_dir=Path(args.output_dir))
 
 
 if __name__ == "__main__":

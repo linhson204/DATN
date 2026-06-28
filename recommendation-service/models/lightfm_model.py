@@ -304,58 +304,6 @@ class LightFMRecommender:
                 boosts[similar_product_id] = boosts.get(similar_product_id, 0.0) + float(boost_weight)
         return boosts
 
-    def _infer_gender_maps_from_feature_matrices(self) -> None:
-        """
-        Backward-compatible fallback: nếu artifact cũ chưa có file map giới tính,
-        suy luận lại từ item_features/user_features đã lưu.
-        """
-        if self.dataset is None:
-            return
-
-        try:
-            _, user_feature_map, _, item_feature_map = self.dataset.mapping()
-        except Exception:
-            return
-
-        if not self.item_target_genders and self.item_features is not None:
-            idx_to_item_feature = {idx: name for name, idx in item_feature_map.items()}
-            inferred_item_genders: dict[str, str] = {}
-            for item_id, item_idx in self.item_id_map.items():
-                row = self.item_features.getrow(item_idx)
-                for feature_idx in row.indices:
-                    token = idx_to_item_feature.get(int(feature_idx))
-                    if isinstance(token, str) and token.startswith("gender:"):
-                        normalized = self._normalize_gender(token)
-                        if normalized:
-                            inferred_item_genders[str(item_id)] = normalized
-                        break
-
-            if inferred_item_genders:
-                self.item_target_genders = inferred_item_genders
-                logger.info(
-                    "Inferred item gender map from item features: %d items",
-                    len(inferred_item_genders),
-                )
-
-        if not self.user_genders and self.user_features is not None:
-            idx_to_user_feature = {idx: name for name, idx in user_feature_map.items()}
-            inferred_user_genders: dict[str, str] = {}
-            for user_id, user_idx in self.user_id_map.items():
-                row = self.user_features.getrow(user_idx)
-                for feature_idx in row.indices:
-                    token = idx_to_user_feature.get(int(feature_idx))
-                    if isinstance(token, str) and token.startswith("user_gender:"):
-                        normalized = self._normalize_gender(token)
-                        if normalized:
-                            inferred_user_genders[str(user_id)] = normalized
-                        break
-
-            if inferred_user_genders:
-                self.user_genders = inferred_user_genders
-                logger.info(
-                    "Inferred user gender map from user features: %d users",
-                    len(inferred_user_genders),
-                )
 
     '''Kiểm tra mô hình đã được huấn luyện (fitted) hay chưa trước khi thực hiện các thao tác dự đoán.'''
     def _require_fitted(self) -> None:
@@ -802,7 +750,6 @@ class LightFMRecommender:
         recommender.item_seasons = item_seasons
         recommender.item_target_genders = item_target_genders
         recommender.user_genders = user_genders
-        recommender._infer_gender_maps_from_feature_matrices()
 
         logger.info(
             "Artifacts loaded from %s — %d users, %d items",
