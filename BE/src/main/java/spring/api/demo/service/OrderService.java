@@ -140,12 +140,13 @@ public class OrderService {
             paymentUrl = paymentResult.getOrderUrl();
         } else if ("MOMO".equals(savedOrder.getPaymentMethod())) {
             MoMoCreatePaymentResult paymentResult = moMoService.createPayment(savedOrder, user.getEmail());
-            savedOrder.setPaymentAppTransId(paymentResult.getRequestId());
+            savedOrder.setPaymentAppTransId(paymentResult.getOrderId());
             savedOrder.setPaymentStatus("PENDING");
             paymentUrl = paymentResult.getPayUrl();
         }
 
         updateStockAfterCheckout(cartItems);
+        cartItemRepository.deleteAll(cartItems);
         cartItemRepository.deleteByUserAndIsSelectedTrue(user);
 
         OrderResponse response = orderMapper.toOrderResponse(savedOrder);
@@ -153,11 +154,14 @@ public class OrderService {
         return response;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PageResponse<OrderResponse> getMyOrders(String email, int page, int size) {
         User user = getUserByEmail(email);
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50), Sort.by("createdAt").descending());
         Page<Order> orders = orderRepository.findByUser(user, pageable);
+        for (Order order : orders.getContent()) {
+            syncPaymentStatus(order);
+        }
         return PageResponse.fromPage(orders.map(orderMapper::toOrderResponse));
     }
 
@@ -192,11 +196,102 @@ public class OrderService {
         return PageResponse.fromPage(orders.map(orderMapper::toOrderResponse));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public OrderResponse getMyOrderDetail(String email, UUID orderId) {
         User user = getUserByEmail(email);
         Order order = orderRepository.findByIdAndUser(orderId, user)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        syncPaymentStatus(order);
+        return orderMapper.toOrderResponse(order);
+    }
+
+    @Transactional
+    public void syncPaymentStatus(Order order) {
+        if (!"PENDING".equals(order.getPaymentStatus())) {
+            return;
+        }
+        if ("ZALOPAY".equals(order.getPaymentMethod())) {
+            zaloPayService.queryPaymentStatus(order);
+        } else if ("MOMO".equals(order.getPaymentMethod())) {
+            moMoService.queryPaymentStatus(order);
+        }
+    }
+
+    @Transactional
+    public OrderResponse checkPaymentStatus(String email, UUID orderId) {
+        User user = getUserByEmail(email);
+        Order order = orderRepository.findByIdAndUser(orderId, user)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        syncPaymentStatus(order);
+        return orderMapper.toOrderResponse(order);
+    }
+
+    /**
+     * Tạo lại link thanh toán cho đơn ZALOPAY/MOMO chưa được thanh toán.
+     * Dùng khi user hủy trên trang ZaloPay/MoMo và muốn thử lại.
+     */
+    @Transactional
+    public OrderResponse repayOrder(String email, UUID orderId) {
+        User user = getUserByEmail(email);
+        Order order = orderRepository.findByIdAndUser(orderId, user)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        String paymentMethod = order.getPaymentMethod();
+        if (!"ZALOPAY".equals(paymentMethod) && !"MOMO".equals(paymentMethod)) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_REPAY);
+        }
+        if ("PAID".equals(order.getPaymentStatus())) {
+            throw new AppException(ErrorCode.ORDER_ALREADY_PAID);
+        }
+        if ("CANCELLED".equals(order.getStatus())) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_REPAY);
+        }
+
+        String paymentUrl;
+        if ("ZALOPAY".equals(paymentMethod)) {
+            ZaloPayCreatePaymentResult result = zaloPayService.createPayment(order, user.getEmail());
+            order.setPaymentAppTransId(result.getAppTransId());
+            paymentUrl = result.getOrderUrl();
+        } else {
+            MoMoCreatePaymentResult result = moMoService.createPayment(order, user.getEmail());
+            order.setPaymentAppTransId(result.getOrderId());
+            paymentUrl = result.getPayUrl();
+        }
+
+        order.setPaymentStatus("PENDING");
+        orderRepository.save(order);
+
+        OrderResponse response = orderMapper.toOrderResponse(order);
+        response.setPaymentUrl(paymentUrl);
+        return response;
+    }
+
+    /**
+     * User tự hủy đơn hàng khi chưa thanh toán.
+     * Áp dụng cho tất cả phương thức thanh toán, miễn là đơn còn PENDING và chưa PAID.
+     */
+    @Transactional
+    public OrderResponse cancelOrder(String email, UUID orderId) {
+        User user = getUserByEmail(email);
+        Order order = orderRepository.findByIdAndUser(orderId, user)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if ("CANCELLED".equals(order.getStatus())) {
+            return orderMapper.toOrderResponse(order);
+        }
+        if (!"PENDING".equals(order.getStatus())) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_REPAY);
+        }
+        if ("PAID".equals(order.getPaymentStatus())) {
+            throw new AppException(ErrorCode.ORDER_ALREADY_PAID);
+        }
+
+        restoreStockAfterCancel(order.getOrderItems());
+
+        order.setStatus("CANCELLED");
+        order.setPaymentStatus("UNPAID");
+        orderRepository.save(order);
+
         return orderMapper.toOrderResponse(order);
     }
 
@@ -334,6 +429,18 @@ public class OrderService {
                 .map(cartItem -> {
                     ProductVariant variant = cartItem.getVariant();
                     variant.setStockQuantity(variant.getStockQuantity() - cartItem.getQuantity());
+                    return variant;
+                })
+                .toList();
+
+        productVariantRepository.saveAll(variantsToUpdate);
+    }
+
+    private void restoreStockAfterCancel(List<OrderItem> orderItems) {
+        List<ProductVariant> variantsToUpdate = orderItems.stream()
+                .map(orderItem -> {
+                    ProductVariant variant = orderItem.getVariant();
+                    variant.setStockQuantity(variant.getStockQuantity() + orderItem.getQuantity());
                     return variant;
                 })
                 .toList();

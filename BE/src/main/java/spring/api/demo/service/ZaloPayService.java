@@ -21,6 +21,7 @@ import spring.api.demo.entity.Order;
 import spring.api.demo.entity.OrderItem;
 import spring.api.demo.exception.AppException;
 import spring.api.demo.exception.ErrorCode;
+import spring.api.demo.repository.CartItemRepository;
 import spring.api.demo.repository.OrderRepository;
 
 import javax.crypto.Mac;
@@ -56,6 +57,9 @@ public class ZaloPayService {
     @Value("${zalopay.create-endpoint:https://sb-openapi.zalopay.vn/v2/create}")
     private String createEndpoint;
 
+    @Value("${zalopay.query-endpoint:https://sb-openapi.zalopay.vn/v2/query}")
+    private String queryEndpoint;
+
     @Value("${zalopay.callback-url:}")
     private String callbackUrl;
 
@@ -65,15 +69,18 @@ public class ZaloPayService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final OrderRepository orderRepository;
+    private final CartItemRepository cartItemRepository;
 
     public ZaloPayService(
             RestTemplate restTemplate,
             ObjectMapper objectMapper,
-            OrderRepository orderRepository
+            OrderRepository orderRepository,
+            CartItemRepository cartItemRepository
     ) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
         this.orderRepository = orderRepository;
+        this.cartItemRepository = cartItemRepository;
     }
 
     public ZaloPayCreatePaymentResult createPayment(Order order, String appUserEmail) {
@@ -205,6 +212,8 @@ public class ZaloPayService {
             if ("PENDING".equals(order.getStatus())) {
                 order.setStatus("CONFIRMED");
             }
+            // Xóa giỏ hàng sau khi thanh toán ZaloPay thành công
+            cartItemRepository.deleteByUserAndIsSelectedTrue(order.getUser());
             orderRepository.save(order);
         }
 
@@ -212,6 +221,54 @@ public class ZaloPayService {
                 .returnCode(1)
                 .returnMessage("success")
                 .build();
+    }
+
+    @Transactional
+    public boolean queryPaymentStatus(Order order) {
+        if (order.getPaymentAppTransId() == null || order.getPaymentAppTransId().isBlank()) {
+            return false;
+        }
+        String appTransId = order.getPaymentAppTransId();
+        String signData = appId + "|" + appTransId + "|" + key1;
+        String mac = signHmacSha256(signData, key1);
+
+        MultiValueMap<String, String> payload = new LinkedMultiValueMap<>();
+        payload.add("app_id", String.valueOf(appId));
+        payload.add("app_trans_id", appTransId);
+        payload.add("mac", mac);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    queryEndpoint,
+                    new HttpEntity<>(payload, headers),
+                    String.class
+            );
+            String responseBody = response.getBody();
+            if (responseBody != null && !responseBody.isBlank()) {
+                JsonNode responseNode = objectMapper.readTree(responseBody);
+                int returnCode = responseNode.path("return_code").asInt(-1);
+                boolean isProcessing = responseNode.path("is_processing").asBoolean(false);
+                if (returnCode == 1 && !isProcessing) {
+                    order.setPaymentStatus("PAID");
+                    String zpTransId = responseNode.path("zp_trans_id").asText("");
+                    if (!zpTransId.isBlank()) {
+                        order.setPaymentTransactionId(zpTransId);
+                    }
+                    if ("PENDING".equals(order.getStatus())) {
+                        order.setStatus("CONFIRMED");
+                    }
+                    cartItemRepository.deleteByUserAndIsSelectedTrue(order.getUser());
+                    orderRepository.save(order);
+                    return true;
+                }
+            }
+        } catch (Exception ex) {
+            // Ignore query error
+        }
+        return false;
     }
 
     private String buildItemData(List<OrderItem> orderItems) {

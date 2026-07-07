@@ -58,18 +58,25 @@ def _recall_at_k(recommended: list[str], relevant: set[str], k: int) -> float:
     return hits / float(len(relevant))
 
 
-def _ndcg_at_k(recommended: list[str], relevant: set[str], k: int) -> float:
+def _ndcg_at_k(recommended: list[str], relevant: dict[str, float], k: int) -> float:
+    """Graded NDCG@K: gain = 2^rel - 1, trong đó rel là trọng số tương tác của item.
+
+    Ưu điểm so với binary NDCG: phân biệt được mức độ yêu thích
+    (ví dụ: purchase > add_to_cart > view).
+    """
     top_k = recommended[:k]
     if not top_k or not relevant:
         return 0.0
 
     dcg = 0.0
     for rank, item_id in enumerate(top_k, start=1):
-        if item_id in relevant:
-            dcg += 1.0 / log2(rank + 1)
+        rel = relevant.get(item_id, 0.0)
+        if rel > 0:
+            dcg += (2.0 ** rel - 1.0) / log2(rank + 1)
 
-    ideal_hits = min(len(relevant), k)
-    idcg = sum(1.0 / log2(rank + 1) for rank in range(1, ideal_hits + 1))
+    # IDCG: sắp xếp các item relevant theo weight giảm dần, lấy top-k
+    sorted_rels = sorted(relevant.values(), reverse=True)[:k]
+    idcg = sum((2.0 ** rel - 1.0) / log2(rank + 1) for rank, rel in enumerate(sorted_rels, start=1))
     if idcg == 0:
         return 0.0
     return dcg / idcg
@@ -85,8 +92,6 @@ def _catalog_coverage(rankings: dict[str, list[str]], total_items: int, k: int) 
     Tỷ lệ các mặt hàng trong danh mục xuất hiện trong danh sách top-k của *bất kỳ* người dùng nào.
 
     Đo lường mức độ bao quát của mô hình trong việc khám phá danh mục.
-
-    Giá trị 0,05 có nghĩa là chỉ có 5% sản phẩm được đề xuất.
     """
     if total_items == 0:
         return 0.0
@@ -125,18 +130,42 @@ def _novelty_at_k(rankings: dict[str, list[str]], item_pop: dict[str, float], k:
 # ======================================================================
 
 
-def _ground_truth(test_df: pd.DataFrame) -> dict[str, set[str]]:
-    grouped = test_df.groupby("user_id")["product_id"].apply(lambda values: set(values.astype(str))).to_dict()
-    return {str(user_id): product_ids for user_id, product_ids in grouped.items()}
+def _ground_truth(test_df: pd.DataFrame) -> dict[str, dict[str, float]]:
+    """Trả về dict user_id → {product_id: relevance_weight} để dùng cho graded NDCG.
+
+    Relevance = tổng weight tương tác của user với sản phẩm đó trong test set.
+    Precision và Recall vẫn dùng tập key (set) lấy từ dict này.
+    """
+    agg = (
+        test_df.copy()
+        .assign(
+            user_id=lambda d: d["user_id"].astype(str),
+            product_id=lambda d: d["product_id"].astype(str),
+        )
+        .groupby(["user_id", "product_id"])["weight"]
+        .sum()
+        .reset_index()
+    )
+    result: dict[str, dict[str, float]] = {}
+    for row in agg.itertuples(index=False):
+        if row.user_id not in result:
+            result[row.user_id] = {}
+        result[row.user_id][row.product_id] = float(row.weight)
+    return result
 
 
 def _summarize_accuracy(
     rankings: dict[str, list[str]],
-    truth: dict[str, set[str]],
+    truth: dict[str, dict[str, float]],
     k_precision: int = 10,
     k_recall: int = 20,
     k_ndcg: int = 10,
 ) -> dict[str, float]:
+    """Tổng hợp các chỉ số đánh giá.
+
+    - Precision@K và Recall@K: dùng relevant_set (tập key của truth dict).
+    - NDCG@K: dùng graded relevance (dict weight) → phân biệt mức độ yêu thích.
+    """
     users = list(truth.keys())
     if not users:
         return {
@@ -151,10 +180,11 @@ def _summarize_accuracy(
 
     for user_id in users:
         recommended = rankings.get(user_id, [])
-        relevant = truth.get(user_id, set())
-        precision_values.append(_precision_at_k(recommended, relevant, k_precision))
-        recall_values.append(_recall_at_k(recommended, relevant, k_recall))
-        ndcg_values.append(_ndcg_at_k(recommended, relevant, k_ndcg))
+        relevant_graded = truth.get(user_id, {})
+        relevant_set = set(relevant_graded.keys())  # dùng cho precision / recall
+        precision_values.append(_precision_at_k(recommended, relevant_set, k_precision))
+        recall_values.append(_recall_at_k(recommended, relevant_set, k_recall))
+        ndcg_values.append(_ndcg_at_k(recommended, relevant_graded, k_ndcg))
 
     return {
         f"precision@{k_precision}": float(sum(precision_values) / len(precision_values)),

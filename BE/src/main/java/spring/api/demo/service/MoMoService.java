@@ -17,6 +17,7 @@ import spring.api.demo.dto.payment.response.MoMoCreatePaymentResult;
 import spring.api.demo.entity.Order;
 import spring.api.demo.exception.AppException;
 import spring.api.demo.exception.ErrorCode;
+import spring.api.demo.repository.CartItemRepository;
 import spring.api.demo.repository.OrderRepository;
 
 import javax.crypto.Mac;
@@ -25,6 +26,9 @@ import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +52,9 @@ public class MoMoService {
     @Value("${momo.create-endpoint:https://test-payment.momo.vn/v2/gateway/api/create}")
     private String createEndpoint;
 
+    @Value("${momo.query-endpoint:https://test-payment.momo.vn/v2/gateway/api/query}")
+    private String queryEndpoint;
+
     @Value("${momo.callback-url:}")
     private String callbackUrl;
 
@@ -57,15 +64,18 @@ public class MoMoService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final OrderRepository orderRepository;
+    private final CartItemRepository cartItemRepository;
 
     public MoMoService(
             RestTemplate restTemplate,
             ObjectMapper objectMapper,
-            OrderRepository orderRepository
+            OrderRepository orderRepository,
+            CartItemRepository cartItemRepository
     ) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
         this.orderRepository = orderRepository;
+        this.cartItemRepository = cartItemRepository;
     }
 
     public MoMoCreatePaymentResult createPayment(Order order, String appUserEmail) {
@@ -76,9 +86,9 @@ public class MoMoService {
             throw new AppException(ErrorCode.INVALID_ORDER_AMOUNT);
         }
 
-        String orderId = order.getId().toString();
+        String orderId = generateMoMoOrderId(order.getId());
         String requestId = UUID.randomUUID().toString();
-        String orderInfo = "Thanh toan don hang #" + orderId.substring(0, 8).toUpperCase();
+        String orderInfo = "Thanh toan don hang #" + order.getId().toString().substring(0, 8).toUpperCase();
         String extraData = "";
         String requestType = "captureWallet";
 
@@ -219,8 +229,63 @@ public class MoMoService {
             if ("PENDING".equals(order.getStatus())) {
                 order.setStatus("CONFIRMED");
             }
+            // Xóa giỏ hàng sau khi thanh toán MoMo thành công
+            cartItemRepository.deleteByUserAndIsSelectedTrue(order.getUser());
         }
         orderRepository.save(order);
+    }
+
+    @Transactional
+    public boolean queryPaymentStatus(Order order) {
+        if (order.getPaymentAppTransId() == null || order.getPaymentAppTransId().isBlank()) {
+            return false;
+        }
+        String orderId = order.getPaymentAppTransId();
+        String requestId = UUID.randomUUID().toString();
+        String rawSignature = "accessKey=" + accessKey
+                + "&orderId=" + orderId
+                + "&partnerCode=" + partnerCode
+                + "&requestId=" + requestId;
+        String signature = signHmacSha256(rawSignature, secretKey);
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("partnerCode", partnerCode);
+        requestBody.put("requestId", requestId);
+        requestBody.put("orderId", orderId);
+        requestBody.put("lang", "vi");
+        requestBody.put("signature", signature);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    queryEndpoint,
+                    new HttpEntity<>(requestBody, headers),
+                    String.class
+            );
+            String responseBody = response.getBody();
+            if (responseBody != null && !responseBody.isBlank()) {
+                JsonNode responseNode = objectMapper.readTree(responseBody);
+                int resultCode = responseNode.path("resultCode").asInt(-1);
+                if (resultCode == 0) {
+                    order.setPaymentStatus("PAID");
+                    long transId = responseNode.path("transId").asLong(0);
+                    if (transId > 0) {
+                        order.setPaymentTransactionId(String.valueOf(transId));
+                    }
+                    if ("PENDING".equals(order.getStatus())) {
+                        order.setStatus("CONFIRMED");
+                    }
+                    cartItemRepository.deleteByUserAndIsSelectedTrue(order.getUser());
+                    orderRepository.save(order);
+                    return true;
+                }
+            }
+        } catch (Exception ex) {
+            // Ignore query error
+        }
+        return false;
     }
 
     private String buildOrderRedirectUrl(UUID orderId) {
@@ -263,5 +328,12 @@ public class MoMoService {
                 || redirectUrl.isBlank()) {
             throw new AppException(ErrorCode.PAYMENT_GATEWAY_NOT_CONFIGURED);
         }
+    }
+
+    private String generateMoMoOrderId(UUID orderId) {
+        String datePrefix = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"))
+                .format(DateTimeFormatter.ofPattern("yyMMdd"));
+        String orderPart = orderId.toString().replace("-", "").substring(0, 8);
+        return "MM" + datePrefix + "_" + System.currentTimeMillis() + "_" + orderPart;
     }
 }

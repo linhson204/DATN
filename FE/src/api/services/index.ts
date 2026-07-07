@@ -1,3 +1,4 @@
+export { adminApi, type UserSummary, type UserStats, type CategoryStatItem } from "./adminApi";
 export { authApi } from "./authApi";
 export { cartApi } from "./cartApi";
 export { ordersApi, orderStatuses, paymentOrdersStatus, paymentStatusLabel } from "./ordersApi";

@@ -120,7 +120,7 @@ export function OrdersAdminTab() {
   return (
     <div className="dashboard-panel">
       <div className="panel-header">
-        <h3>🛒 Quản lý đơn hàng</h3>
+        <h3>Quản lý đơn hàng</h3>
 
         {/* Tất cả filter cùng 1 hàng */}
         <div className="panel-header-actions">

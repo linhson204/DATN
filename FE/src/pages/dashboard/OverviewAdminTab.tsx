@@ -141,7 +141,7 @@ export function OverviewAdminTab({
       {/* Recent Orders */}
       <div className="dashboard-panel">
         <div className="panel-header">
-          <h3>🛒 Đơn hàng gần đây</h3>
+          <h3>Đơn hàng gần đây</h3>
         </div>
         <div className="db-table-wrap">
           <table className="db-table">

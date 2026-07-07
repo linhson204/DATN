@@ -12,12 +12,14 @@ import {
   IconLogout,
   IconOrder,
   IconProduct,
+  IconUsers,
 } from "./DashboardIcons";
 import { type Tab } from "./dashboardTypes";
 import { OverviewAdminTab } from "./OverviewAdminTab";
 import { ProductsAdminTab } from "./ProductsAdminTab";
 import { CategoriesAdminTab } from "./CategoriesAdminTab";
 import { OrdersAdminTab } from "./OrdersAdminTab";
+import { UsersAdminTab } from "./UsersAdminTab";
 
 // ─────────────────────────────────────────────
 // Main DashboardPage – sidebar shell only
@@ -82,6 +84,7 @@ export function DashboardPage() {
     { id: "products", label: "Sản phẩm", icon: <IconProduct /> },
     { id: "categories", label: "Danh mục", icon: <IconCategory /> },
     { id: "orders", label: "Đơn hàng", icon: <IconOrder /> },
+    { id: "users", label: "Dữ liệu người dùng", icon: <IconUsers /> },
   ];
 
   const tabTitles: Record<Tab, string> = {
@@ -89,6 +92,7 @@ export function DashboardPage() {
     products: "Quản lý sản phẩm",
     categories: "Quản lý danh mục",
     orders: "Quản lý đơn hàng",
+    users: "Quản lý dữ liệu người dùng",
   };
 
   return (
@@ -182,6 +186,7 @@ export function DashboardPage() {
               />
             )}
             {activeTab === "orders" && <OrdersAdminTab />}
+            {activeTab === "users" && <UsersAdminTab />}
           </main>
         </div>
       </div>

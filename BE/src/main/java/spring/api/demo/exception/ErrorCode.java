@@ -40,6 +40,8 @@ public enum ErrorCode {
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "Đơn hàng không tồn tại"),
     INVALID_ORDER_STATUS(HttpStatus.UNPROCESSABLE_ENTITY, "Trạng thái đơn hàng không hợp lệ"),
     INVALID_ORDER_AMOUNT(HttpStatus.UNPROCESSABLE_ENTITY, "Phí vận chuyển và tổng tiền không hợp lệ"),
+    ORDER_ALREADY_PAID(HttpStatus.UNPROCESSABLE_ENTITY, "Đơn hàng đã được thanh toán"),
+    ORDER_CANNOT_REPAY(HttpStatus.UNPROCESSABLE_ENTITY, "Đơn hàng không thể thực hiện thao tác này"),
 
     // Review
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "Đánh giá không tồn tại"),

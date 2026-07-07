@@ -666,6 +666,17 @@
   color: #ffffff;
 }
 
+.db-page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  user-select: none;
+}
+
 /* ── Modal ── */
 .db-modal-overlay {
   position: fixed;
@@ -1031,3 +1042,638 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Users Admin Tab + UserStatsModal
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── User avatar mini (table) ── */
+.user-avatar-mini {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3cd3c1, #0d9488);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+/* ── Membership badges ── */
+.user-badge-silver {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #c0cad6;
+}
+
+.user-badge-gold {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+/* ── Stats button in table ── */
+.user-stats-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.user-stats-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* ── Inline loading / error states ── */
+.db-loading-wrap,
+.db-error-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.db-error-wrap {
+  color: #dc2626;
+}
+
+.db-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3cd3c1;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #cbd5e1;
+  border-top-color: #0d9488;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── XL modal (wider for stats charts) ── */
+.db-modal-xl {
+  max-width: 860px;
+}
+
+/* ── Stats modal subtitle ── */
+.user-stats-subtitle {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0.2rem 0 0;
+}
+
+.user-stats-subtitle span {
+  font-family: monospace;
+  color: #3cd3c1;
+}
+
+/* ── Stats modal body layout ── */
+.user-stats-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+}
+
+@media (max-width: 680px) {
+  .user-stats-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Stats section card ── */
+.user-stats-section {
+  background: #f8fafc;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 1rem 1.1rem 1.1rem;
+}
+
+.user-stats-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 4px solid #3cd3c1;
+  padding-left: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.user-stats-section-header h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.user-stats-section-total {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+}
+
+/* ── Empty state ── */
+.user-stats-empty {
+  font-size: 0.83rem;
+  color: #94a3b8;
+  text-align: center;
+  padding: 1.2rem 0;
+  margin: 0;
+}
+
+/* ── Horizontal bars ── */
+.user-stats-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.user-stats-bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 36px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-stats-bar-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-stats-bar-track {
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.user-stats-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 4px;
+}
+
+.user-stats-bar-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e293b;
+  text-align: right;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   UserDetailPage  (ud-*)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Root container ── */
+.ud-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.22s ease;
+}
+
+/* ── Back bar ── */
+.ud-back-bar {
+  display: flex;
+  align-items: center;
+}
+
+.ud-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.48rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.ud-back-btn:hover {
+  background: #ffffff;
+  border-color: #3cd3c1;
+  color: #0d9488;
+  box-shadow: 0 2px 8px rgba(60, 211, 193, 0.18);
+}
+
+/* ── Hero ── */
+.ud-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem 1.8rem;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.ud-hero::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3cd3c1, #8b5cf6, #ec4899);
+}
+
+.ud-hero-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3cd3c1, #0d9488);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(60, 211, 193, 0.35);
+}
+
+.ud-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ud-hero-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0.15rem;
+}
+
+.ud-hero-username {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #3cd3c1;
+  margin: 0 0 0.6rem;
+}
+
+.ud-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.83rem;
+  color: #64748b;
+}
+
+/* ── Section wrapper ── */
+.ud-section {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+  padding: 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* ── Section title row ── */
+.ud-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.9rem;
+}
+
+.ud-section-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.ud-section-title h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.ud-section-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+/* ── TopN controls ── */
+.ud-topn-ctrl {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ud-topn-label {
+  font-size: 0.82rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ── Strategy badge ── */
+.ud-strategy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0d9488;
+  background: rgba(60, 211, 193, 0.1);
+  border: 1px solid rgba(60, 211, 193, 0.3);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  align-self: flex-start;
+}
+
+.ud-strategy-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3cd3c1;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* ── Recommended product grid ── */
+.ud-rec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+/* ── Recommended card ── */
+.ud-rec-card {
+  background: #f8fafc;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.ud-rec-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  border-color: #3cd3c1;
+}
+
+/* Rank badge */
+.ud-rec-rank {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+/* Discount badge */
+.ud-rec-discount {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  background: linear-gradient(135deg, #ff8655, #ef4444);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+}
+
+/* OOS badge */
+.ud-rec-oos {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  z-index: 2;
+  background: rgba(239, 68, 68, 0.85);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+}
+
+/* Image area */
+.ud-rec-img-wrap {
+  position: relative;
+  background: #f1f5f9;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+.ud-rec-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.ud-rec-card:hover .ud-rec-img {
+  transform: scale(1.05);
+}
+
+.ud-rec-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #cbd5e1;
+}
+
+/* Card body */
+.ud-rec-body {
+  padding: 0.75rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.ud-rec-brand {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.ud-rec-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ud-rec-type {
+  font-size: 0.72rem;
+  color: #3cd3c1;
+  font-weight: 500;
+  background: rgba(60, 211, 193, 0.08);
+  border: 1px solid rgba(60, 211, 193, 0.2);
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
+  align-self: flex-start;
+  margin: 0.1rem 0;
+}
+
+.ud-rec-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+}
+
+.ud-rec-sale {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0d9488;
+}
+
+.ud-rec-original {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.ud-rec-stock {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* ── Empty recs ── */
+.ud-empty-recs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.ud-empty-recs-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.ud-empty-recs p {
+  font-size: 0.9rem;
+  color: #475569;
+  margin: 0;
+  font-weight: 600;
+}
+
+.ud-empty-recs-sub {
+  font-size: 0.82rem !important;
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  max-width: 360px;
+}
+
+/* ── Evaluation note ── */
+.ud-eval-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, rgba(60, 211, 193, 0.06), rgba(139, 92, 246, 0.04));
+  border: 1px solid rgba(60, 211, 193, 0.25);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  font-size: 0.835rem;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.ud-eval-note-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.ud-eval-note strong {
+  color: #0d9488;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .ud-rec-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .ud-hero {
+    flex-direction: column;
+    text-align: center;
+  }
+  .ud-hero-meta {
+    justify-content: center;
+  }
+  .ud-topn-ctrl {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .ud-rec-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+

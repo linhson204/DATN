@@ -92,4 +92,22 @@ export const ordersApi = {
     });
     return unwrapApiResponse<ApiMessage>(response.data);
   },
+
+  /** Hủy đơn hàng – áp dụng cho COD, ZALOPAY, MOMO khi còn PENDING */
+  async cancelOrder(orderId: string): Promise<Order> {
+    const response = await http.post<unknown>(`/v1/orders/${orderId}/cancel`);
+    return unwrapApiResponse<Order>(response.data);
+  },
+
+  /** Tạo lại link thanh toán cho đơn ZALOPAY/MOMO chưa PAID */
+  async repay(orderId: string): Promise<Order> {
+    const response = await http.post<unknown>(`/v1/orders/${orderId}/repay`);
+    return unwrapApiResponse<Order>(response.data);
+  },
+
+  /** Chủ động kiểm tra trạng thái thanh toán ZaloPay/MoMo với cổng thanh toán */
+  async checkPayment(orderId: string): Promise<Order> {
+    const response = await http.post<unknown>(`/v1/orders/${orderId}/check-payment`);
+    return unwrapApiResponse<Order>(response.data);
+  },
 };

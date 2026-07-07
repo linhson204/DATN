@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 import type { OrderStatus } from "../../types/api";
 
-export type Tab = "overview" | "products" | "categories" | "orders";
+export type Tab = "overview" | "products" | "categories" | "orders" | "users";
 
 export type RevenueByStatus = {
   status: OrderStatus;

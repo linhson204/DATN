@@ -85,7 +85,7 @@ export function HomePage() {
 
   return (
     <section className="home-page reveal-up">
-      <section className="home-hero">
+      {/* <section className="home-hero">
         <div className="hero-overlay">
           <h2>Thời trang cho mọi khoảnh khắc</h2>
           <p>
@@ -98,7 +98,7 @@ export function HomePage() {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
 
       <section id="featured-products" className="surface-card featured-shell">
         <div className="featured-top">

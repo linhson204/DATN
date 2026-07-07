@@ -80,6 +80,9 @@ public class SecurityConfig {
                         // ========== VIEW LOG ENDPOINTS ==========
                         .requestMatchers(HttpMethod.POST, "/v1/products/{id}/view").permitAll()
 
+                        // ========== ADMIN DATA ENDPOINTS ==========
+                        .requestMatchers(HttpMethod.GET, "/v1/admin/users", "/v1/admin/users/**").hasRole("ADMIN")
+
                         // ========== RECOMMENDATION ENDPOINTS (PUBLIC) ==========
                         .requestMatchers(HttpMethod.GET, "/v1/recommendations/**").permitAll()
 

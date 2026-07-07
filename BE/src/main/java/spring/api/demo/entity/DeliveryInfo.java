@@ -49,7 +49,7 @@ public class DeliveryInfo {
     @Column(name = "delivery_time", nullable = false)
     String deliveryTime;
 
-    @Column(name = "delivery_instructions", nullable = false)
+    @Column(name = "delivery_instructions", nullable = true)
     String deliveryInstructions;
 
     @Builder.Default

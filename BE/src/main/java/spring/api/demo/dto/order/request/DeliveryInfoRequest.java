@@ -35,6 +35,5 @@ public class DeliveryInfoRequest {
     @NotBlank(message = "Thoi gian giao hang khong duoc de trong")
     String deliveryTime;
 
-    @NotBlank(message = "Huong dan giao hang khong duoc de trong")
     String deliveryInstructions;
 }

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import spring.api.demo.dto.user.response.CategoryStatItem;
 import spring.api.demo.entity.ProductViewLog;
 
 import java.time.LocalDateTime;
@@ -49,4 +50,20 @@ public interface ProductViewLogRepository extends JpaRepository<ProductViewLog, 
             @Param("since") LocalDateTime since,
             Pageable pageable
     );
+
+    /**
+     * Admin: đếm số lần xem sản phẩm của user, gom nhóm theo articleType.
+     */
+    @Query("""
+        SELECT new spring.api.demo.dto.user.response.CategoryStatItem(
+            pvl.product.category.articleType,
+            COUNT(pvl.id)
+        )
+        FROM ProductViewLog pvl
+        WHERE pvl.user.id = :userId
+        GROUP BY pvl.product.category.articleType
+        ORDER BY COUNT(pvl.id) DESC
+        """)
+    List<CategoryStatItem> countByArticleTypeForUser(@Param("userId") UUID userId);
 }
+

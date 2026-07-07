@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import { ordersApi, reviewsApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import type { Order, OrderItem, ReviewItem } from "../types/api";
 import { formatCurrency, formatDateTime } from "../utils/format";
 import { Spinner } from "../components/ui/Spinner";
-// import { OrderStatusBadge, PaymentStatusBadge } from "../components/ui/OrderBadges";
+import { ConfirmModal } from "../components/ui/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import "../styles/OrderDetailReview.css";
 
@@ -205,6 +206,119 @@ function ReviewSection({ order, userId }: { order: Order; userId: string }) {
   );
 }
 
+// ─── Payment Actions (Repay / Cancel for pending orders) ─────────────────────
+
+function PaymentActions({
+  order,
+  onOrderUpdate,
+}: {
+  order: Order;
+  onOrderUpdate: (updated: Order) => void;
+}) {
+  const [isRepaying, setIsRepaying] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const isOnlinePayment =
+    order.paymentMethod === "ZALOPAY" || order.paymentMethod === "MOMO";
+
+  const canRepay =
+    isOnlinePayment &&
+    order.status === "PENDING" &&
+    order.paymentStatus !== "PAID";
+
+  const canCancel =
+    order.status === "PENDING" && order.paymentStatus !== "PAID";
+
+  if (!canRepay && !canCancel) return null;
+
+  const handleRepay = async () => {
+    setIsRepaying(true);
+    try {
+      const updated = await ordersApi.repay(order.id);
+      if (updated.paymentUrl) {
+        toast.success("Đang chuyển đến trang thanh toán...");
+        window.location.href = updated.paymentUrl;
+      } else {
+        toast.error("Không lấy được link thanh toán, vui lòng thử lại.");
+      }
+    } catch (rawErr) {
+      toast.error(parseApiError(rawErr).message);
+    } finally {
+      setIsRepaying(false);
+    }
+  };
+
+  const executeCancel = async () => {
+    setIsCancelling(true);
+    try {
+      const updated = await ordersApi.cancelOrder(order.id);
+      toast.success("Đơn hàng đã được hủy và tồn kho đã hoàn lại.");
+      onOrderUpdate(updated);
+      setShowCancelModal(false);
+    } catch (rawErr) {
+      toast.error(parseApiError(rawErr).message);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const isBusy = isRepaying || isCancelling;
+  const gatewayName = order.paymentMethod === "ZALOPAY" ? "ZaloPay" : "MoMo";
+
+  return (
+    <div className="odr-payment-actions">
+      <div className="odr-payment-notice">
+        <span className="odr-payment-notice-icon">⏳</span>
+        <div>
+          <strong>
+            {canRepay
+              ? `Chờ thanh toán qua ${gatewayName}`
+              : "Đơn chưa xử lý — bạn có thể hủy"}
+          </strong>
+          <p>
+            {canRepay
+              ? "Đơn hàng sẽ bị hủy nếu không thanh toán trong thời gian quy định."
+              : "Đơn COD có thể hủy khi chưa được xử lý."}
+          </p>
+        </div>
+      </div>
+      <div className="odr-payment-btns">
+        {canRepay && (
+          <button
+            className="btn btn-primary odr-btn-repay"
+            onClick={() => void handleRepay()}
+            disabled={isBusy}
+            id={`odr-repay-${order.id}`}
+          >
+            {isRepaying
+              ? "Đang tạo link..."
+              : `Thanh toán lại qua ${gatewayName}`}
+          </button>
+        )}
+        {canCancel && (
+          <button
+            className="btn btn-danger odr-btn-cancel"
+            onClick={() => setShowCancelModal(true)}
+            disabled={isBusy}
+            id={`odr-cancel-${order.id}`}
+          >
+            {isCancelling ? "Đang hủy..." : "Hủy đơn"}
+          </button>
+        )}
+      </div>
+
+      {/* Confirm Cancel Modal */}
+      <ConfirmModal
+        isOpen={showCancelModal}
+        onClose={() => !isCancelling && setShowCancelModal(false)}
+        onConfirm={executeCancel}
+        isLoading={isCancelling}
+      />
+    </div>
+  );
+}
+
 // ─── Order Line Card ─────────────────────────────────────────────────────────
 
 function OrderLineCard({ item }: { item: OrderItem }) {
@@ -262,6 +376,8 @@ export function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleOrderUpdate = (updated: Order) => setOrder(updated);
 
   useEffect(() => {
     let isCurrent = true;
@@ -390,6 +506,9 @@ export function OrderDetailPage() {
               <OrderLineCard item={item} key={item.orderItemId} />
             ))}
           </div>
+
+          {/* ── Payment actions (repay / cancel) ── */}
+          <PaymentActions order={order} onOrderUpdate={handleOrderUpdate} />
         </article>
 
         {/* ── Review section (chỉ hiện nếu đơn đã giao) ── */}

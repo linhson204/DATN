@@ -67,6 +67,27 @@ public class OrderController {
         return ResponseEntity.ok(new SuccessResource<>("Lấy chi tiết đơn hàng thành công", response));
     }
 
+    @PostMapping("/{orderId}/repay")
+    public ResponseEntity<SuccessResource<OrderResponse>> repayOrder(@PathVariable UUID orderId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        OrderResponse response = orderService.repayOrder(email, orderId);
+        return ResponseEntity.ok(new SuccessResource<>("Tạo lại link thanh toán thành công", response));
+    }
+
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<SuccessResource<OrderResponse>> cancelOrder(@PathVariable UUID orderId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        OrderResponse response = orderService.cancelOrder(email, orderId);
+        return ResponseEntity.ok(new SuccessResource<>("Hủy đơn hàng thành công", response));
+    }
+
+    @PostMapping("/{orderId}/check-payment")
+    public ResponseEntity<SuccessResource<OrderResponse>> checkPayment(@PathVariable UUID orderId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        OrderResponse response = orderService.checkPaymentStatus(email, orderId);
+        return ResponseEntity.ok(new SuccessResource<>("Kiểm tra trạng thái thanh toán thành công", response));
+    }
+
     @PutMapping("/{orderId}/status")
     public ResponseEntity<SuccessResource<OrderResponse>> updateOrderStatus(
             @PathVariable UUID orderId,

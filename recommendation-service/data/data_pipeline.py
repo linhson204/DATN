@@ -76,9 +76,10 @@ def extract_order_interactions(engine: Engine, lookback_days: Optional[int] = No
     Trích xuất dữ liệu tương tác đặt hàng (orders) từ database.
 
     Chiến lược trọng số:
-        Sản phẩm đã mua được gán weight âm (-1.0) trong interaction matrix.
-        Mục đích: model LightFM học được tín hiệu "không nên gợi ý lại sản phẩm đã mua".
-        Penalty tương tự cũng được áp dụng tại inference-time qua order_purchased_item_penalty.
+        Sản phẩm đã mua là tín hiệu dương, mạnh hơn view/wishlist/cart.
+        Mục đích: model học rằng đây là tương tác có ý định cao.
+        Việc không gợi ý lại sản phẩm đã mua được xử lý ở inference-time
+        qua exclude_interacted và order_purchased_item_penalty.
 
     Tham số:
         engine: SQLAlchemy engine kết nối tới database.
@@ -86,7 +87,7 @@ def extract_order_interactions(engine: Engine, lookback_days: Optional[int] = No
 
     Trả về:
         DataFrame chứa các cột: user_id, product_id, weight, created_at, signal.
-        weight luôn = -1.0 (negative feedback cho sản phẩm đã mua).
+        weight luôn dương cho sản phẩm đã mua.
     """
     days = int(lookback_days or settings.order_lookback_days)
     cutoff = datetime.now() - timedelta(days=days)
@@ -111,9 +112,9 @@ def extract_order_interactions(engine: Engine, lookback_days: Optional[int] = No
         return pd.DataFrame(columns=["user_id", "product_id", "weight", "created_at", "signal"])
 
     quantity = orders["quantity"].fillna(0).astype(float).clip(lower=0)
-    # Gán trọng số âm cho sản phẩm đã mua: model học được rằng không nên gợi ý lại.
+    # Gán trọng số dương cho sản phẩm đã mua: model học đây là tín hiệu ý định cao.
     # Chỉ giữ các hàng có quantity > 0 (đã thực sự đặt hàng).
-    orders["weight"] = quantity.map(lambda value: float(settings.order_purchased_item_penalty) if value > 0 else 0.0)
+    orders["weight"] = quantity.map(lambda value: float(abs(settings.order_purchased_item_penalty)) if value > 0 else 0.0)
     orders = orders[orders["weight"] != 0.0]
     orders["signal"] = "ORDER"
     return orders[["user_id", "product_id", "weight", "created_at", "signal"]]
@@ -205,12 +206,11 @@ def combine_interactions(
 
     Chiến lược ORDER VETO:
         Sau khi tổng hợp tất cả tín hiệu, nếu một cặp (user_id, product_id) có tín hiệu ORDER,
-        weight cuối cùng sẽ bị ép về giá trị penalty (order_purchased_item_penalty = -1.0),
-        bất kể bao nhiêu điểm dương đã tích lũy từ view/wishlist/review trước đó.
+        weight cuối cùng sẽ được ép thành một mức dương ổn định để phản ánh purchase intent.
 
-        Lý do: người dùng xem sản phẩm nhiều lần trước khi mua sẽ tích lũy điểm dương
-        (ví dụ 5 × DETAIL_VIEW = +2.5), nếu không veto thì ORDER(-1.0) không thể
-        kéo net weight xuống âm, dẫn đến sản phẩm đã mua vẫn bị gợi ý lại.
+        Lý do: nếu purchase chỉ bị cộng thêm như một interaction bình thường, nó có thể bị
+        làm loãng bởi nhiều view nhỏ; ép về một mức dương cố định giúp purchase luôn là
+        tín hiệu mạnh nhất của cùng một item.
     """
     frames = [views, orders]
     if wishlist is not None and not wishlist.empty:
@@ -244,20 +244,20 @@ def combine_interactions(
     )
 
     weight_cap = settings.max_interaction_weight
-    # Clip upper để tránh outlier dương, nhưng giữ nguyên giá trị âm (negative feedback từ ORDER)
+    # Clip upper để tránh outlier dương.
     aggregated["weight"] = aggregated["weight"].clip(upper=weight_cap)
 
-    # ORDER VETO: ép toàn bộ cặp đã mua về penalty, bất kể tổng điểm tích lũy
+    # ORDER override: ép toàn bộ cặp đã mua về một mức dương ổn định.
     if purchased_pairs:
-        purchased_penalty = float(settings.order_purchased_item_penalty)
+        purchased_weight = float(abs(settings.order_purchased_item_penalty))
         veto_mask = aggregated.apply(
             lambda row: (row["user_id"], row["product_id"]) in purchased_pairs, axis=1
         )
-        aggregated.loc[veto_mask, "weight"] = purchased_penalty
+        aggregated.loc[veto_mask, "weight"] = purchased_weight
         logger.info(
-            "ORDER VETO applied: %d purchased pairs forced to weight=%.1f",
+            "ORDER override applied: %d purchased pairs forced to weight=%.1f",
             int(veto_mask.sum()),
-            purchased_penalty,
+            purchased_weight,
         )
 
     logger.info(

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import { ordersApi, reviewsApi } from "../api/services";
 import { parseApiError } from "../api/helpers";
 import type { Order, OrderItem, PageResponse } from "../types/api";
@@ -7,7 +8,9 @@ import { formatCurrency, formatDateTime } from "../utils/format";
 import { Spinner } from "../components/ui/Spinner";
 import { OrderStatusBadge, PaymentStatusBadge } from "../components/ui/OrderBadges";
 import { EmptyState } from "../components/ui/EmptyState";
+import { ConfirmModal } from "../components/ui/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
+import "../styles/OrdersPage.css";
 
 function getOrderCode(orderId: string): string {
   return orderId.slice(0, 8).toUpperCase();
@@ -88,6 +91,10 @@ export function OrdersPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Per-order loading: Map<orderId, 'repay'|'cancel'|null>
+  const [orderActions, setOrderActions] = useState<Map<string, string | null>>(new Map());
+  // Target order ID for cancel confirmation modal
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
 
   const ordersInPage = pageData.items;
 
@@ -164,6 +171,45 @@ export function OrdersPage() {
     });
   }
 
+  function setOrderAction(orderId: string, action: string | null) {
+    setOrderActions((prev) => new Map(prev).set(orderId, action));
+  }
+
+  async function handleRepay(orderId: string) {
+    setOrderAction(orderId, "repay");
+    try {
+      const updated = await ordersApi.repay(orderId);
+      if (updated.paymentUrl) {
+        toast.success("Đang chuyển đến trang thanh toán...");
+        window.location.href = updated.paymentUrl;
+      } else {
+        toast.error("Không lấy được link thanh toán, vui lòng thử lại.");
+      }
+    } catch (rawErr) {
+      toast.error(parseApiError(rawErr).message);
+    } finally {
+      setOrderAction(orderId, null);
+    }
+  }
+
+  async function executeCancel(orderId: string) {
+    setOrderAction(orderId, "cancel");
+    try {
+      const updated = await ordersApi.cancelOrder(orderId);
+      toast.success("Đơn hàng đã được hủy.");
+      // Update the order in local state immediately
+      setPageData((prev) => ({
+        ...prev,
+        items: prev.items.map((o) => (o.id === orderId ? updated : o)),
+      }));
+      setCancelTargetId(null);
+    } catch (rawErr) {
+      toast.error(parseApiError(rawErr).message);
+    } finally {
+      setOrderAction(orderId, null);
+    }
+  }
+
   return (
     <section className="surface-card orders-page reveal-up">
       {/* ── Header ── */}
@@ -229,6 +275,18 @@ export function OrdersPage() {
               );
               const isDelivered = order.status === "DELIVERED";
               const hasPendingReview = pendingReviewIds.has(order.id);
+              const currentAction = orderActions.get(order.id) ?? null;
+              const isBusy = currentAction !== null;
+
+              // Show repay + cancel for ZALOPAY/MOMO PENDING orders not yet paid
+              const canRepay =
+                (order.paymentMethod === "ZALOPAY" || order.paymentMethod === "MOMO") &&
+                order.status === "PENDING" &&
+                order.paymentStatus === "PENDING";
+
+              // Show cancel-only for COD PENDING, OR repay+cancel for online PENDING
+              const canCancel =
+                order.status === "PENDING" && order.paymentStatus !== "PAID";
 
               return (
                 <article className="op-card" key={order.id}>
@@ -296,6 +354,42 @@ export function OrdersPage() {
                     </div>
                   )}
 
+                  {/* ── Payment action banner ── */}
+                  {(canRepay || canCancel) && (
+                    <div className="op-payment-banner">
+                      <div className="op-payment-banner-text">
+                        <span className="op-payment-banner-dot" />
+                        {canRepay
+                          ? `Chờ thanh toán qua ${order.paymentMethod === "ZALOPAY" ? "ZaloPay" : "MoMo"}`
+                          : "Đơn chưa xử lý — bạn có thể hủy"}
+                      </div>
+                      <div className="op-payment-banner-actions">
+                        {canRepay && (
+                          <button
+                            className="btn op-btn-repay"
+                            type="button"
+                            disabled={isBusy}
+                            id={`op-repay-${order.id}`}
+                            onClick={() => void handleRepay(order.id)}
+                          >
+                            {currentAction === "repay" ? "Đang xử lý..." : "Thanh toán lại"}
+                          </button>
+                        )}
+                        {canCancel && (
+                          <button
+                            className="btn op-btn-cancel"
+                            type="button"
+                            disabled={isBusy}
+                            id={`op-cancel-${order.id}`}
+                            onClick={() => setCancelTargetId(order.id)}
+                          >
+                            {currentAction === "cancel" ? "Đang hủy..." : "Hủy đơn"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div className="op-card-actions">
                     <button
@@ -343,6 +437,22 @@ export function OrdersPage() {
           </button>
         </footer>
       )}
+
+      {/* ── Confirm Cancel Modal ── */}
+      <ConfirmModal
+        isOpen={cancelTargetId !== null}
+        onClose={() => {
+          if (!cancelTargetId || orderActions.get(cancelTargetId) !== "cancel") {
+            setCancelTargetId(null);
+          }
+        }}
+        onConfirm={() => {
+          if (cancelTargetId) {
+            void executeCancel(cancelTargetId);
+          }
+        }}
+        isLoading={cancelTargetId ? orderActions.get(cancelTargetId) === "cancel" : false}
+      />
     </section>
   );
 }

@@ -55,11 +55,11 @@ class Settings(BaseSettings):
     item_map_path: Path = Field(default=BASE_DIR / "models" / "saved" / "item_id_map.json", alias="ITEM_MAP_PATH")
 
    # Các tham số liên quan đến việc tạo tín hiệu tương tác từ dữ liệu lịch sử.
-    view_lookback_days: int = Field(default=1200, alias="VIEW_LOOKBACK_DAYS")
-    order_lookback_days: int = Field(default=1800, alias="ORDER_LOOKBACK_DAYS")
-    wishlist_lookback_days: int = Field(default=1800, alias="WISHLIST_LOOKBACK_DAYS")
-    cart_lookback_days: int = Field(default=1800, alias="CART_LOOKBACK_DAYS")
-    review_lookback_days: int = Field(default=1800, alias="REVIEW_LOOKBACK_DAYS")
+    view_lookback_days: int = Field(default=120, alias="VIEW_LOOKBACK_DAYS")
+    order_lookback_days: int = Field(default=180, alias="ORDER_LOOKBACK_DAYS")
+    wishlist_lookback_days: int = Field(default=180, alias="WISHLIST_LOOKBACK_DAYS")
+    cart_lookback_days: int = Field(default=120, alias="CART_LOOKBACK_DAYS")
+    review_lookback_days: int = Field(default=180, alias="REVIEW_LOOKBACK_DAYS")
     
     # Các trọng số được sử dụng để tính toán tín hiệu tương tác từ các hành động 
     # khác nhau của người dùng.
@@ -83,7 +83,7 @@ class Settings(BaseSettings):
     fallback_top_n: int = Field(default=50, alias="FALLBACK_TOP_N")
 
     '''Tham số liên quan đến việc chia dữ liệu thành tập huấn luyện và tập kiểm tra.'''
-    split_holdout_days: int = Field(default=25, alias="SPLIT_HOLDOUT_DAYS")
+    split_holdout_days: int = Field(default=16, alias="SPLIT_HOLDOUT_DAYS")
 
     '''Các siêu tham số cho mô hình LightFM.'''
     lightfm_no_components: int = Field(default=32, alias="LIGHTFM_NO_COMPONENTS")
